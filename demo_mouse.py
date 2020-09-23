@@ -6,8 +6,8 @@ import math
 from arcade.isometric import isometric_grid_to_screen
 
 # Constants
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 650
+SCREEN_WIDTH = 1300
+SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Platformer"
 
 # Constants used to scale our sprites from their original size
@@ -19,15 +19,17 @@ GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * TILE_SCALING)
 
 # Movement speed of player, in pixels per frame
 PLAYER_MOVEMENT_SPEED = 10
+PLAYER_DASH_SPEED = 50
 GRAVITY = 0
 PLAYER_JUMP_SPEED = 20
+BULLET_SPEED = 15
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
-LEFT_VIEWPORT_MARGIN = 250
-RIGHT_VIEWPORT_MARGIN = 250
-BOTTOM_VIEWPORT_MARGIN = 100
-TOP_VIEWPORT_MARGIN = 100
+LEFT_VIEWPORT_MARGIN = 350
+RIGHT_VIEWPORT_MARGIN = 350
+BOTTOM_VIEWPORT_MARGIN = 350
+TOP_VIEWPORT_MARGIN = 350
 
 
 def magnitude(x, y):
@@ -48,6 +50,7 @@ class MyGame(arcade.Window):
         # go into a list.
         self.coin_list = None
         self.wall_list = None
+        self.bullet_list = None
         self.player_list = None
 
         # Separate variable that holds the player sprite
@@ -66,12 +69,16 @@ class MyGame(arcade.Window):
         self.mouse_x = 160
         self.mouse_y = 0
 
+        self.right_click = False
+
         self.direction_x = 1
         self.direction_y = 0
 
         #smooth camera
         self.view_target_left = self.view_left
         self.view_target_bottom = self.view_bottom
+
+        self.shift_timer = 0
 
 
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
@@ -90,14 +97,14 @@ class MyGame(arcade.Window):
         self.player_list = arcade.SpriteList()
         self.floor_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
-        self.coin_list = arcade.SpriteList()
+        self.bullet_list = arcade.SpriteList()
 
         # Set up the player, specifically placing it at these coordinates.
         image_source = ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png"
 
         self.player_sprite = arcade.Sprite(image_source, CHARACTER_SCALING)
-        self.player_sprite.center_x = 300
-        self.player_sprite.center_y = 300
+        self.player_sprite.center_x = 350
+        self.player_sprite.center_y = 350
         self.player_list.append(self.player_sprite)
 
 
@@ -146,6 +153,7 @@ class MyGame(arcade.Window):
         self.floor_list.draw()
         self.player_list.draw()
         self.wall_list.draw()
+        self.bullet_list.draw()
 
         # Draw our score on the screen, scrolling it with the viewport
         score_text = f"Score: {self.score}"
@@ -153,9 +161,56 @@ class MyGame(arcade.Window):
                          arcade.csscolor.WHITE, 18)
 
 
+    def on_mouse_press(self, x, y, button, modifiers):
+        if button == arcade.MOUSE_BUTTON_RIGHT:
+            self.right_click = True
+        elif button == arcade.MOUSE_BUTTON_LEFT:
+            #create bullet
+            bullet = arcade.Sprite("./tiles/ray.png", 1)
+
+            #position at player
+            bullet.center_x = self.player_sprite.center_x
+            bullet.center_y = self.player_sprite.center_y
+
+            x_diff = x - self.player_sprite.left + self.view_left - 30
+            y_diff = y - self.player_sprite.bottom + self.view_bottom - 30
+
+            angle = math.atan2(y_diff, x_diff)
+
+            bullet.angle = math.degrees(angle) + 90
+
+            bullet.change_x = math.cos(angle) * BULLET_SPEED
+            bullet.change_y = math.sin(angle) * BULLET_SPEED
+
+            self.bullet_list.append(bullet)
+            
+            #stop player motion
+            self.right_click = False
+            self.player_sprite.change_x=0
+            self.player_sprite.change_y=0
+            
+
+
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        #position of mouse relative to palyer
+        self.mouse_x = x
+        self.mouse_y = y
+
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        if button == arcade.MOUSE_BUTTON_RIGHT:
+            self.right_click = False
+            self.player_sprite.change_x=0
+            self.player_sprite.change_y=0
+
+
+            
+
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
 
+        """
         if key == arcade.key.UP or key == arcade.key.W:
             self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED
             self.direction_y = PLAYER_MOVEMENT_SPEED
@@ -168,31 +223,10 @@ class MyGame(arcade.Window):
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
             self.direction_x = PLAYER_MOVEMENT_SPEED
-        elif key == 65505: 
+        """
+        if key == 65505: 
             """shift"""
-            relative_mouse_x = 0
-            relative_mouse_y = 0
-            relative_mouse_x=self.direction_x
-            relative_mouse_y=self.direction_y
-            
-            if relative_mouse_y==0 and relative_mouse_x==0:
-                relative_mouse_x=1
-
-
-
-            """
-
-            relative_mouse_x = self.mouse_x - self.player_sprite.left + self.view_left - 30
-            relative_mouse_y = self.mouse_y - self.player_sprite.bottom + self.view_bottom - 30
-            """
-           
-            relative_magnitude =  magnitude(relative_mouse_x, relative_mouse_y)
-
-            relative_mouse_x /= relative_magnitude
-            relative_mouse_y /= relative_magnitude
-
-            self.player_sprite.left += 160*relative_mouse_x 
-            self.player_sprite.bottom += 160*relative_mouse_y
+            self.shift_timer = 5
             
 
     def on_key_release(self, key, modifiers):
@@ -216,7 +250,47 @@ class MyGame(arcade.Window):
                 self.direction_y = 0
 
     def on_update(self, delta_time):
+
+
+        self.bullet_list.update()
+
+        for bullet in self.bullet_list:
+            hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
+
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+
+            if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
+                bullet.remove_from_sprite_lists()
+
         """ Movement and game logic """
+
+        if self.shift_timer!=0 or self.right_click:
+            relative_mouse_x = self.mouse_x - self.player_sprite.left + self.view_left - 30
+            relative_mouse_y = self.mouse_y - self.player_sprite.bottom + self.view_bottom - 30
+           
+            relative_magnitude =  magnitude(relative_mouse_x, relative_mouse_y)
+
+            relative_mouse_x /= relative_magnitude
+            relative_mouse_y /= relative_magnitude
+
+            if self.shift_timer==0 and self.right_click:
+
+                self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED*relative_mouse_x 
+                self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED*relative_mouse_y
+            
+            if self.shift_timer!=0:
+                self.shift_timer-=1
+                if self.shift_timer!=0:
+                    self.player_sprite.change_x = PLAYER_DASH_SPEED*relative_mouse_x 
+                    self.player_sprite.change_y = PLAYER_DASH_SPEED*relative_mouse_y
+                else:
+                    self.player_sprite.change_x = 0
+                    self.player_sprite.change_y = 0
+                    
+        
+
+
 
         self.physics_engine.update()
 
