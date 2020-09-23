@@ -11,7 +11,7 @@ SCREEN_TITLE = "Platformer"
 
 # Constants used to scale our sprites from their original size
 CHARACTER_SCALING = 1
-TILE_SCALING = 10
+TILE_SCALING = 4
 COIN_SCALING = 0.5
 SPRITE_PIXEL_SIZE = 16
 GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * TILE_SCALING)
@@ -90,16 +90,23 @@ class MyGame(arcade.Window):
         # --- Load in a map from the tiled editor ---
 
         # Name of map file to load
-        map_name = "./tiles/level1.tmx"
+        # map_name = "./tiles/level1.tmx"
+        map_name = "./tiles/urban-level-test.tmx"
         # Name of the layer in the file that has our platforms/walls
         platforms_layer_name = 'Floor'
         platforms_wall_layer_name = 'Walls'
+        platforms_wall_no_collision_layer_name = 'WallsNoCollision'
         # Name of the layer that has items for pick-up
 
         # Read in the tiled map
         my_map = arcade.tilemap.read_tmx(map_name)
 
         # -- Platforms
+        self.wall_no_collision_list = arcade.tilemap.process_layer(map_object=my_map,
+                                                      layer_name=platforms_wall_no_collision_layer_name,
+                                                      scaling=TILE_SCALING,
+                                                      use_spatial_hash=True)
+
         self.wall_list = arcade.tilemap.process_layer(map_object=my_map,
                                                       layer_name=platforms_wall_layer_name,
                                                       scaling=TILE_SCALING,
@@ -131,6 +138,7 @@ class MyGame(arcade.Window):
         self.floor_list.draw()
         self.player_list.draw()
         self.wall_list.draw()
+        self.wall_no_collision_list.draw()
 
         # Draw our score on the screen, scrolling it with the viewport
         score_text = f"Score: {self.score}"
