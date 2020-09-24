@@ -1,0 +1,6 @@
+1.1
+- Added more tiles to stone_walls tileset.
+
+1.0
+- Initial versioned release for OpenGameArt.org.
+- Created stone_terrain tileset.
