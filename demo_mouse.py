@@ -11,9 +11,9 @@ SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Platformer"
 
 # Constants used to scale our sprites from their original size
-CHARACTER_SCALING = 1
+CHARACTER_SCALING = 1.5
 ENEMY_SCALING  = 0.5
-TILE_SCALING = 10
+TILE_SCALING = 5
 SPRITE_PIXEL_SIZE = 16
 GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * TILE_SCALING)
 
@@ -47,11 +47,30 @@ def load_texture_pair(filename):
         arcade.load_texture(filename, flipped_horizontally=True)
     ]
 
-class Player:
+class Player(arcade.Sprite):
 
     def __init__(self):
+        super().__init__()
+
+        self.moving_textures = {}
+        self.still_textures = {}
+        
+        self.facing_dir = None
+        self.curr_idx = 0
+
         self.sprite = None
         self.health = 10
+
+        self.stamina_timer = 0
+        self.stamina = 3
+
+        self.direction_x = None
+        self.direction_y = None
+
+        self.texture = None
+        self.scale = None
+
+        self.animation_timer = None
  
 
 
@@ -59,9 +78,102 @@ class Player:
 
         image_source = img_src
 
-        self.sprite = arcade.Sprite(image_source, scale)
-        self.sprite.center_x = start_x
-        self.sprite.center_y = start_y
+        self.center_x = start_x
+        self.center_y = start_y
+
+        self.direction_x = 0
+        self.direction_y = 0
+
+        sprite_sheet = img_src
+
+        self.scale = scale
+
+        left = []
+        for i in range(3):
+            left.append(arcade.load_texture(f'{img_src}_{i}.png'))
+        
+        right = []
+        for i in range(3):
+            right.append(arcade.load_texture(f'{img_src}_{i}.png'))
+
+        up = []
+        for i in range(3):
+            up.append(arcade.load_texture(f'{img_src}_{i}.png'))
+        down = []
+        for i in range(3):
+            down.append(arcade.load_texture(f'{img_src}_{i}.png'))
+
+
+        self.still_textures['LEFT'] = left
+        self.still_textures['RIGHT'] = right
+        self.still_textures['UP'] = up
+        self.still_textures['DOWN'] = down
+
+        self.facing_dir = 'UP'
+
+        self.texture = self.still_textures['UP'][self.curr_idx]
+
+        self.animation_timer = 0
+
+
+    def dash(self):
+        if self.stamina > 0:
+            self.stamina_timer = 100
+
+            relative_x = self.direction_x
+            relative_y = self.direction_y
+            
+            if relative_y==0 and relative_x==0:
+                relative_x=1
+           
+            relative_magnitude =  magnitude(relative_x, relative_y)
+
+            relative_x /= relative_magnitude
+            relative_y /= relative_magnitude
+
+            self.left += 160*relative_x 
+            self.bottom += 160*relative_y
+
+            self.stamina -= 1
+
+    def update(self):
+        if self.stamina < 3:
+            self.stamina_timer-= 1
+            if (self.stamina_timer == 0):
+                self.stamina_timer = 100
+                self.stamina += 1
+            
+    
+    def update_animation(self,delta_time = 1/60):
+
+        self.animation_timer += delta_time
+
+        if self.change_x<0 and self.facing_dir != 'LEFT':
+            self.facing_dir='LEFT'
+        if self.change_x>0 and self.facing_dir != 'RIGHT':
+            self.facing_dir='RIGHT'
+        if self.change_y>0 and self.facing_dir != 'UP':
+            self.facing_dir='UP'
+        if self.change_y<0 and self.facing_dir != 'DOWN':
+            self.facing_dir='DOWN'
+        
+        if (self.animation_timer > 0.1):
+            if(self.change_x == 0 and self.change_y==0):
+                self.animation_timer = 0
+                self.curr_idx+=1
+                if(self.curr_idx==3):
+                    self.curr_idx=0 
+                self.texture = self.still_textures[self.facing_dir][self.curr_idx]
+            else:
+                self.curr_idx+=1
+                if(self.curr_idx==3):
+                    self.curr_idx=0
+                self.texture=self.still_textures[self.facing_dir][self.curr_idx]
+
+
+
+        
+
 
 
 class Enemy:
@@ -140,14 +252,10 @@ class MyGame(arcade.Window):
 
         self.right_click = False
 
-        self.direction_x = 1
-        self.direction_y = 0
 
         #smooth camera
         self.view_target_left = self.view_left
         self.view_target_bottom = self.view_bottom
-
-        self.shift_timer = 0
 
 
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
@@ -170,10 +278,10 @@ class MyGame(arcade.Window):
         # Set up the player, specifically placing it at these coordinates.
         self.player = Player()
         self.second_player = Player()
-        self.player.setup(":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png", CHARACTER_SCALING, 350, 350)
-        self.second_player.setup("./tiles/2_enemies_1_idle_002.png", ENEMY_SCALING, 350, 200)
-        self.player_list.append(self.player.sprite)
-        self.player_list.append(self.second_player.sprite)
+        self.player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 350)
+        self.second_player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 200)
+        self.player_list.append(self.player)
+        self.player_list.append(self.second_player)
 
         self.enemy = Enemy()
         self.enemy.setup()
@@ -184,10 +292,11 @@ class MyGame(arcade.Window):
         # --- Load in a map from the tiled editor ---
 
         # Name of map file to load
-        map_name = "./tiles/level1.tmx"
+        map_name = "./maps/level-1.tmx"
         # Name of the layer in the file that has our platforms/walls
         platforms_layer_name = 'Floor'
         platforms_wall_layer_name = 'Walls'
+        platforms_props_layer_name = 'props'
         # Name of the layer that has items for pick-up
 
         # Read in the tiled map
@@ -204,16 +313,21 @@ class MyGame(arcade.Window):
                                                       scaling=TILE_SCALING,
                                                       use_spatial_hash=True)
 
+        self.props_list = arcade.tilemap.process_layer(map_object=my_map,
+                                                      layer_name=platforms_props_layer_name,
+                                                      scaling=TILE_SCALING,
+                                                      use_spatial_hash=True)
+
         # --- Other stuff
         # Set the background color
         if my_map.background_color:
             arcade.set_background_color(my_map.background_color)
 
         # Create the 'physics engine'
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player.sprite,
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                              self.wall_list,
                                                              )
-        self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player.sprite,
+        self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
                                                              self.wall_list,
                                                              )
         self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
@@ -232,9 +346,10 @@ class MyGame(arcade.Window):
         self.enemy_list.draw()
         self.wall_list.draw()
         self.bullet_list.draw()
+        self.props_list.draw()
 
         # Draw our health on the screen, scrolling it with the viewport
-        health_text = f"health: {self.player.health} enemy: {self.enemy.health}"
+        health_text = f"health: {self.player.health} enemy: {self.enemy.health} stamina: {self.player.stamina}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
                          arcade.csscolor.WHITE, 18)
 
@@ -247,11 +362,11 @@ class MyGame(arcade.Window):
             bullet = arcade.Sprite("./tiles/ray.png", 1)
 
             #position at player
-            bullet.center_x = self.player.sprite.center_x
-            bullet.center_y = self.player.sprite.center_y
+            bullet.center_x = self.player.center_x
+            bullet.center_y = self.player.center_y
 
-            x_diff = x - self.player.sprite.left + self.view_left - 30
-            y_diff = y - self.player.sprite.bottom + self.view_bottom - 30
+            x_diff = x - self.player.left + self.view_left - 30
+            y_diff = y - self.player.bottom + self.view_bottom - 30
 
             angle = math.atan2(y_diff, x_diff)
 
@@ -264,8 +379,8 @@ class MyGame(arcade.Window):
             
             #stop player motion
             self.right_click = False
-            self.player.sprite.change_x=0
-            self.player.sprite.change_y=0
+            self.player.change_x=0
+            self.player.change_y=0
             
 
 
@@ -279,8 +394,8 @@ class MyGame(arcade.Window):
     def on_mouse_release(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.right_click = False
-            self.player.sprite.change_x=0
-            self.player.sprite.change_y=0
+            self.player.change_x=0
+            self.player.change_y=0
 
 
             
@@ -289,36 +404,21 @@ class MyGame(arcade.Window):
         """Called whenever a key is pressed. """
 
         if key == arcade.key.UP or key == arcade.key.W:
-            self.player.sprite.change_y = PLAYER_MOVEMENT_SPEED
-            self.direction_y = PLAYER_MOVEMENT_SPEED
+            self.player.change_y = PLAYER_MOVEMENT_SPEED
+            self.player.direction_y = PLAYER_MOVEMENT_SPEED
         elif key == arcade.key.DOWN or key == arcade.key.S:
-            self.player.sprite.change_y = -PLAYER_MOVEMENT_SPEED
-            self.direction_y = -PLAYER_MOVEMENT_SPEED
+            self.player.change_y = -PLAYER_MOVEMENT_SPEED
+            self.player.direction_y = -PLAYER_MOVEMENT_SPEED
         elif key == arcade.key.LEFT or key == arcade.key.A:
-            self.player.sprite.change_x = -PLAYER_MOVEMENT_SPEED
-            self.direction_x = -PLAYER_MOVEMENT_SPEED
+            self.player.change_x = -PLAYER_MOVEMENT_SPEED
+            self.player.direction_x = -PLAYER_MOVEMENT_SPEED
         elif key == arcade.key.RIGHT or key == arcade.key.D:
-            self.player.sprite.change_x = PLAYER_MOVEMENT_SPEED
-            self.direction_x = PLAYER_MOVEMENT_SPEED
+            self.player.change_x = PLAYER_MOVEMENT_SPEED
+            self.player.direction_x = PLAYER_MOVEMENT_SPEED
         elif key == 65505: 
             """shift"""
-            self.shift_timer = 5
+            self.player.dash()
             
-            relative_mouse_x = 0
-            relative_mouse_y = 0
-            relative_mouse_x=self.direction_x
-            relative_mouse_y=self.direction_y
-            
-            if relative_mouse_y==0 and relative_mouse_x==0:
-                relative_mouse_x=1
-           
-            relative_magnitude =  magnitude(relative_mouse_x, relative_mouse_y)
-
-            relative_mouse_x /= relative_magnitude
-            relative_mouse_y /= relative_magnitude
-
-            self.player.sprite.left += 160*relative_mouse_x 
-            self.player.sprite.bottom += 160*relative_mouse_y
 
         elif key == 32: #space
             #stop motion
@@ -334,24 +434,28 @@ class MyGame(arcade.Window):
         """Called when the user releases a key. """
 
         if key == arcade.key.LEFT or key == arcade.key.A:
-            self.player.sprite.change_x = 0
-            if self.player.sprite.change_y!=0:
-                self.direction_x = 0
+            self.player.change_x = 0
+            if self.player.change_y!=0:
+                self.player.direction_x = 0
         elif key == arcade.key.RIGHT or key == arcade.key.D:
-            self.player.sprite.change_x = 0
-            if self.player.sprite.change_y!=0:
-                self.direction_x = 0
+            self.player.change_x = 0
+            if self.player.change_y!=0:
+                self.player.direction_x = 0
         elif key == arcade.key.DOWN or key == arcade.key.S:
-            self.player.sprite.change_y = 0
-            if self.player.sprite.change_x!=0:
-                self.direction_y = 0
+            self.player.change_y = 0
+            if self.player.change_x!=0:
+                self.player.direction_y = 0
         elif key == arcade.key.UP or key == arcade.key.W:
-            self.player.sprite.change_y = 0
-            if self.player.sprite.change_x!=0:
-                self.direction_y = 0
+            self.player.change_y = 0
+            if self.player.change_x!=0:
+                self.player.direction_y = 0
 
     def on_update(self, delta_time):
 
+        self.player.update_animation()
+
+        self.player.update()
+        self.second_player.update()
 
         self.bullet_list.update()
         self.enemy.move()
@@ -371,20 +475,20 @@ class MyGame(arcade.Window):
 
 
         for enemy in self.enemy_list:
-            hit_list = arcade.check_for_collision_with_list(enemy, self.player_list)
+            hit_list = arcade.check_for_collision(enemy, self.player)
 
-            if len(hit_list) > 0:
+            if hit_list:
                 self.player.health-=1
 
-                if enemy.bottom > self.player.sprite.bottom:
-                    self.player.sprite.bottom -= 100
-                elif enemy.bottom < self.player.sprite.bottom:
-                    self.player.sprite.bottom += 100
+                if enemy.bottom > self.player.bottom:
+                    self.player.bottom -= 100
+                elif enemy.bottom < self.player.bottom:
+                    self.player.bottom += 100
 
-                if enemy.left > self.player.sprite.left:
-                    self.player.sprite.left -= 100
-                elif enemy.left < self.player.sprite.left:
-                    self.player.sprite.left += 100
+                if enemy.left > self.player.left:
+                    self.player.left -= 100
+                elif enemy.left < self.player.left:
+                    self.player.left += 100
 
 
         """ Movement and game logic """
@@ -433,31 +537,31 @@ class MyGame(arcade.Window):
 
         # Scroll left
         left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
-        if self.player.sprite.left < left_boundary:
-            #self.view_left -= left_boundary - self.player.sprite.left
-            self.view_target_left = - left_boundary + self.player.sprite.left
+        if self.player.left < left_boundary:
+            #self.view_left -= left_boundary - self.player.left
+            self.view_target_left = - left_boundary + self.player.left
 
             changed_left = True
 
         # Scroll right
         right_boundary = self.view_left + SCREEN_WIDTH - RIGHT_VIEWPORT_MARGIN
-        if self.player.sprite.right > right_boundary:
-            #self.view_left += self.player.sprite.right - right_boundary
-            self.view_target_left = self.player.sprite.right - right_boundary
+        if self.player.right > right_boundary:
+            #self.view_left += self.player.right - right_boundary
+            self.view_target_left = self.player.right - right_boundary
             changed_left = True
 
         # Scroll up
         top_boundary = self.view_bottom + SCREEN_HEIGHT - TOP_VIEWPORT_MARGIN
-        if self.player.sprite.top > top_boundary:
-            #self.view_bottom += self.player.sprite.top - top_boundary
-            self.view_target_bottom = self.player.sprite.top - top_boundary
+        if self.player.top > top_boundary:
+            #self.view_bottom += self.player.top - top_boundary
+            self.view_target_bottom = self.player.top - top_boundary
             changed_bottom = True
 
         # Scroll down
         bottom_boundary = self.view_bottom + BOTTOM_VIEWPORT_MARGIN
-        if self.player.sprite.bottom < bottom_boundary:
-            #self.view_bottom -= bottom_boundary - self.player.sprite.bottom
-            self.view_target_bottom = - bottom_boundary + self.player.sprite.bottom
+        if self.player.bottom < bottom_boundary:
+            #self.view_bottom -= bottom_boundary - self.player.bottom
+            self.view_target_bottom = - bottom_boundary + self.player.bottom
             changed_bottom = True
 
         if changed_bottom == False:
