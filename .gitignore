@@ -1,0 +1,11 @@
+__pycache__/*
+venv/*
+images/animals/*
+images/characters/*
+images/graveyardkit/*
+images/iso-dungeon/*
+images/iso-lib/*
+images/isometric-landscape/*
+images/platformerkit2/*
+images/platformerkit2/*
+images/player-images/*
