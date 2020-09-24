@@ -4,12 +4,14 @@ import math
 def magnitude(x, y):
     return math.sqrt(x*x + y*y)
 
+DASH_AMOUNT = 100
+
 class Player(arcade.Sprite):
 
     def __init__(self):
         super().__init__()
 
-        self.moving_textures = {}
+        self.walk_textures = {}
         self.still_textures = {}
         
         self.facing_dir = None
@@ -45,26 +47,42 @@ class Player(arcade.Sprite):
 
         self.scale = scale
 
-        left = []
-        for i in range(3):
-            left.append(arcade.load_texture(f'{img_src}_{i}.png'))
+        left_still = []
+        right_still = []
+        down_still = []
+        up_still = []
+
+        left_walk = []
+        right_walk = []
+        down_walk = []
+        up_walk = []
+
+        for i in range(4):
+            left_still.append(arcade.load_texture(f'{img_src}-stand-horizontal-{i}.png'))
+            left_walk.append(arcade.load_texture(f'{img_src}-walk-horizontal-{i}.png'))
         
-        right = []
-        for i in range(3):
-            right.append(arcade.load_texture(f'{img_src}_{i}.png'))
+        for i in range(4):
+            right_still.append(arcade.load_texture(f'{img_src}-stand-horizontal-{i}.png', flipped_horizontally = True))
+            right_walk.append(arcade.load_texture(f'{img_src}-walk-horizontal-{i}.png', flipped_horizontally = True))
 
-        up = []
-        for i in range(3):
-            up.append(arcade.load_texture(f'{img_src}_{i}.png'))
-        down = []
-        for i in range(3):
-            down.append(arcade.load_texture(f'{img_src}_{i}.png'))
+        for i in range(4):
+            up_still.append(arcade.load_texture(f'{img_src}-stand-up-{i}.png'))
+            up_walk.append(arcade.load_texture(f'{img_src}-walk-up-{i}.png'))
+
+        for i in range(4):
+            down_still.append(arcade.load_texture(f'{img_src}-stand-down-{i}.png'))
+            down_walk.append(arcade.load_texture(f'{img_src}-walk-down-{i}.png'))
 
 
-        self.still_textures['LEFT'] = left
-        self.still_textures['RIGHT'] = right
-        self.still_textures['UP'] = up
-        self.still_textures['DOWN'] = down
+        self.still_textures['LEFT'] = left_still
+        self.still_textures['RIGHT'] = right_still
+        self.still_textures['UP'] = up_still
+        self.still_textures['DOWN'] = down_still
+
+        self.walk_textures['LEFT'] = left_walk
+        self.walk_textures['RIGHT'] = right_walk
+        self.walk_textures['UP'] = up_walk
+        self.walk_textures['DOWN'] = down_walk
 
         self.facing_dir = 'UP'
 
@@ -88,8 +106,8 @@ class Player(arcade.Sprite):
             relative_x /= relative_magnitude
             relative_y /= relative_magnitude
 
-            self.left += 160*relative_x 
-            self.bottom += 160*relative_y
+            self.left += DASH_AMOUNT*relative_x 
+            self.bottom += DASH_AMOUNT*relative_y
 
             self.stamina -= 1
 
@@ -115,17 +133,15 @@ class Player(arcade.Sprite):
             self.facing_dir='DOWN'
         
         if (self.animation_timer > 0.1):
+            self.animation_timer = 0
+            self.curr_idx+=1
+            if(self.curr_idx==4):
+                self.curr_idx=0 
+
             if(self.change_x == 0 and self.change_y==0):
-                self.animation_timer = 0
-                self.curr_idx+=1
-                if(self.curr_idx==3):
-                    self.curr_idx=0 
                 self.texture = self.still_textures[self.facing_dir][self.curr_idx]
             else:
-                self.curr_idx+=1
-                if(self.curr_idx==3):
-                    self.curr_idx=0
-                self.texture=self.still_textures[self.facing_dir][self.curr_idx]
+                self.texture=self.walk_textures[self.facing_dir][self.curr_idx]
 
 
 

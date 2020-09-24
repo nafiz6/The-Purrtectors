@@ -18,7 +18,7 @@ SPRITE_PIXEL_SIZE = 16
 GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * TILE_SCALING)
 
 # Movement speed of player, in pixels per frame
-PLAYER_MOVEMENT_SPEED = 10
+PLAYER_MOVEMENT_SPEED = 5
 PLAYER_DASH_SPEED = 50
 GRAVITY = 0
 PLAYER_JUMP_SPEED = 20
@@ -151,8 +151,8 @@ class MyGame(arcade.Window):
         # Set up the player, specifically placing it at these coordinates.
         self.player = Player()
         self.second_player = Player()
-        self.player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 350)
-        self.second_player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 200)
+        self.player.setup("./characters/cat", CHARACTER_SCALING, 350, 350)
+        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 350, 200)
         self.player_list.append(self.player)
         self.player_list.append(self.second_player)
 
@@ -279,15 +279,23 @@ class MyGame(arcade.Window):
         if key == arcade.key.UP or key == arcade.key.W:
             self.player.change_y = PLAYER_MOVEMENT_SPEED
             self.player.direction_y = PLAYER_MOVEMENT_SPEED
+            if self.player.change_x == 0:
+                self.player.direction_x = 0
         elif key == arcade.key.DOWN or key == arcade.key.S:
             self.player.change_y = -PLAYER_MOVEMENT_SPEED
             self.player.direction_y = -PLAYER_MOVEMENT_SPEED
+            if self.player.change_x == 0:
+                self.player.direction_x = 0
         elif key == arcade.key.LEFT or key == arcade.key.A:
             self.player.change_x = -PLAYER_MOVEMENT_SPEED
             self.player.direction_x = -PLAYER_MOVEMENT_SPEED
+            if self.player.change_y == 0:
+                self.player.direction_y = 0
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player.change_x = PLAYER_MOVEMENT_SPEED
             self.player.direction_x = PLAYER_MOVEMENT_SPEED
+            if self.player.change_y == 0:
+                self.player.direction_y = 0
         elif key == 65505: 
             """shift"""
             self.player.dash()
