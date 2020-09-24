@@ -35,8 +35,6 @@ RIGHT_FACING=0
 LEFT_FACING=1
 
 
-def magnitude(x, y):
-    return math.sqrt(x*x + y*y)
 
 def load_texture_pair(filename):
     """
