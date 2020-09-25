@@ -183,8 +183,8 @@ class MyGame(arcade.Window):
         # Set up the player, specifically placing it at these coordinates.
         self.player = Player()
         self.second_player = Player()
-        self.player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 350)
-        self.second_player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 200)
+        self.player.setup("./characters/cat", CHARACTER_SCALING, 350, 350)
+        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 350, 200)
         self.player_list.append(self.player)
         self.player_list.append(self.second_player)
 
@@ -200,27 +200,20 @@ class MyGame(arcade.Window):
         
 
         # Create the 'physics engine'
-        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
-                                                             self.wall_list,
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
+                                                             self.blockable_list
                                                              )
+
+        self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
+                                                             self.blockable_list,
+                                                             )
+        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
+                                                             self.blockable_list,
+                                                             )
+
 
     def setup_post_cut_scene(self):
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
-                                                             self.wall_list,
-                                                             )
-        self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
-                                                             self.wall_list,
-=======
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
-                                                             self.blockable_list,
-                                                             )
-        self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
-                                                             self.blockable_list,
-                                                             )
-        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
-                                                             self.blockable_list,
-                                                             )
-
+        pass
 
     def on_draw(self):
         """ Render the screen. """
@@ -228,11 +221,11 @@ class MyGame(arcade.Window):
 
         # Draw our sprites
         self.floor_list.draw()
-        self.wall_list.draw()
         self.player.bullet_list.draw()
         self.dashable_list.draw()
         self.props_list.draw()
         self.player_list.draw()
+        self.wall_list.draw()
         self.enemy_list.draw()
 
         if self.player.melee_attacking:
@@ -285,7 +278,8 @@ class MyGame(arcade.Window):
                 self.player.direction_y = 0
         elif key == 65505: 
             """shift"""
-            self.player.dash()
+            dash = self.player.dash()
+            print(dash[0], dash[1])
             
 
         elif key == 32: #space
@@ -349,7 +343,6 @@ class MyGame(arcade.Window):
 
         if changed_bottom == False:
             self.view_target_bottom = 0
-        """
 
         if changed_left == False:
             self.view_target_left = 0
@@ -374,7 +367,6 @@ class MyGame(arcade.Window):
                                 SCREEN_WIDTH + self.view_left,
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
-            """
 
 
     def on_update(self, delta_time):

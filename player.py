@@ -6,7 +6,7 @@ BULLET_SPEED = 15
 def magnitude(x, y):
     return math.sqrt(x*x + y*y)
 
-DASH_AMOUNT = 100
+DASH_AMOUNT = 200
 
 class Player(arcade.Sprite):
 
@@ -122,10 +122,10 @@ class Player(arcade.Sprite):
             relative_x /= relative_magnitude
             relative_y /= relative_magnitude
 
-            self.left += DASH_AMOUNT*relative_x 
-            self.bottom += DASH_AMOUNT*relative_y
-
             self.stamina -= 1
+            
+            return [self.center_x + DASH_AMOUNT*relative_x, self.center_y + DASH_AMOUNT*relative_y]
+        return [self.center_x, self.center_y]
 
 
     def update(self):
