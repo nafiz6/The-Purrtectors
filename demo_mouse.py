@@ -91,6 +91,8 @@ class MyGame(arcade.Window):
         self.dashable_list=None
         self.blockable_list=None
 
+        self.can_control = None
+
         # Separate variable that holds the player sprite
         self.player = None
         self.enemy = None
@@ -116,6 +118,8 @@ class MyGame(arcade.Window):
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
 
         self.state = None
+
+        self.cutscene_timer = None
 
         # --- Load in a map from the tiled editor ---
     def load_level(self,path_to_map,map_width,map_height,tile_width,tile_height,tile_scale):
@@ -169,6 +173,10 @@ class MyGame(arcade.Window):
         self.view_bottom = 0
         self.view_left = 0
 
+        self.state = CUTSCENE_1
+        self.cutscene_timer = 0
+        self.can_control = False
+
         # Create the Sprite lists
         self.player_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
@@ -183,7 +191,7 @@ class MyGame(arcade.Window):
         # Set up the player, specifically placing it at these coordinates.
         self.player = Player()
         self.second_player = Player()
-        self.player.setup("./characters/cat", CHARACTER_SCALING, 350, 350)
+        self.player.setup("./characters/cat", CHARACTER_SCALING, 550, 1020)
         self.second_player.setup("./characters/cat", CHARACTER_SCALING, 350, 200)
         self.player_list.append(self.player)
         self.player_list.append(self.second_player)
@@ -200,9 +208,6 @@ class MyGame(arcade.Window):
         
 
         # Create the 'physics engine'
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
-                                                             self.blockable_list
-                                                             )
 
         self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
                                                              self.blockable_list,
@@ -210,10 +215,15 @@ class MyGame(arcade.Window):
         self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
                                                              self.blockable_list,
                                                              )
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
+                                                            self.enemy_list
+                                                             )
 
 
     def setup_post_cut_scene(self):
-        pass
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
+                                                             self.blockable_list
+                                                             )
 
     def on_draw(self):
         """ Render the screen. """
@@ -224,8 +234,8 @@ class MyGame(arcade.Window):
         self.player.bullet_list.draw()
         self.dashable_list.draw()
         self.props_list.draw()
-        self.player_list.draw()
         self.wall_list.draw()
+        self.player_list.draw()
         self.enemy_list.draw()
 
         if self.player.melee_attacking:
@@ -237,6 +247,8 @@ class MyGame(arcade.Window):
                          arcade.csscolor.WHITE, 18)
 
     def on_mouse_press(self, x, y, button, modifiers):
+        if not self.can_control:
+            return
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.player.melee()
         elif button == arcade.MOUSE_BUTTON_LEFT:
@@ -248,12 +260,16 @@ class MyGame(arcade.Window):
         self.mouse_y = y
 
     def on_mouse_release(self, x, y, button, modifiers):
+        if not self.can_control:
+            return
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.right_click = False
             self.player.change_x=0
             self.player.change_y=0
 
     def on_key_press(self, key, modifiers):
+        if not self.can_control:
+            return
         """Called whenever a key is pressed. """
 
         if key == arcade.key.UP or key == arcade.key.W:
@@ -279,7 +295,8 @@ class MyGame(arcade.Window):
         elif key == 65505: 
             """shift"""
             dash = self.player.dash()
-            print(dash[0], dash[1])
+            if(dash!=(self.player.center_x,self.player.center_y) and arcade.has_line_of_sight((self.player.center_x,self.player.center_y),dash,self.wall_list)):
+                    self.player.center_x,self.player.center_y = dash
             
 
         elif key == 32: #space
@@ -293,6 +310,8 @@ class MyGame(arcade.Window):
             self.second_player = temp
 
     def on_key_release(self, key, modifiers):
+        if not self.can_control:
+            return
         """Called when the user releases a key. """
 
         if key == arcade.key.LEFT or key == arcade.key.A:
@@ -369,18 +388,46 @@ class MyGame(arcade.Window):
                                 SCREEN_HEIGHT + self.view_bottom)
 
 
-    def on_update(self, delta_time):
+    def animate_cutscene_1(self, delta_time):
+        self.cutscene_timer += delta_time 
 
-        if (self.state == CUTSCENE_1):
+        if (self.cutscene_timer < 5):
+            self.player.set_brightness(0)
+        if (self.cutscene_timer > 5):
+            brightness = self.player.color[0]
+            brightness += 10
+            if (brightness > 255):
+                brightness = 255
+            self.player.set_brightness(brightness)
+            self.player.change_angle = 4
+            self.player.change_x  = -5
+            self.player.change_y = 1
+
+        if self.cutscene_timer > 6:
+            self.player.change_angle = 0
+            self.player.angle = 0
+            self.player.change_x = 0
+            self.player.change_y = 0
+
+            self.can_control = True
+
             self.state = PLAYTHROUGH_1
             self.setup_post_cut_scene()
+            self.cutscene_timer = 0
+
+    def on_update(self, delta_time):
 
 
+
+        self.update_scroll()
 
         self.player.update_animation()
 
         self.player.update()
         self.second_player.update()
+
+        if (self.state == CUTSCENE_1):
+            self.animate_cutscene_1(delta_time)
 
         self.player.bullet_list.update()
         self.enemy.move()
@@ -434,38 +481,10 @@ class MyGame(arcade.Window):
 
 
 
-        """ Movement and game logic """
-
-        """"
-        if self.shift_timer!=0 or self.right_click:
-            relative_mouse_x = self.mouse_x - self.player.sprite.left + self.view_left - 30
-            relative_mouse_y = self.mouse_y - self.player.sprite.bottom + self.view_bottom - 30
-           
-            relative_magnitude =  magnitude(relative_mouse_x, relative_mouse_y)
-
-            relative_mouse_x /= relative_magnitude
-            relative_mouse_y /= relative_magnitude
-
-            if self.shift_timer==0 and self.right_click:
-
-                self.player.sprite.change_x = PLAYER_MOVEMENT_SPEED*relative_mouse_x 
-                self.player.sprite.change_y = PLAYER_MOVEMENT_SPEED*relative_mouse_y
-            
-            if self.shift_timer!=0:
-                self.shift_timer-=1
-                if self.shift_timer!=0:
-                    self.player.sprite.change_x = PLAYER_DASH_SPEED*relative_mouse_x 
-                    self.player.sprite.change_y = PLAYER_DASH_SPEED*relative_mouse_y
-                else:
-                    self.player.sprite.change_x = 0
-                    self.player.sprite.change_y = 0
-                    
-        """
         self.physics_engine.update()
         self.physics_engine_second.update()
         self.enemy_physics_engine.update()
 
-        self.update_scroll()
 
 
         
