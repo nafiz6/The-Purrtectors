@@ -246,10 +246,10 @@ class MyGame(arcade.Window):
         self.floor_list.draw()
         self.player.bullet_list.draw()
         self.dashable_list.draw()
-        self.props_list.draw()
         self.wall_list.draw()
         self.player_list.draw()
         self.enemy_list.draw()
+        self.props_list.draw()
         self.health_pickup_list.draw()
 
         if self.player.melee_attacking:
@@ -308,8 +308,9 @@ class MyGame(arcade.Window):
                 self.player.direction_y = 0
         elif key == 65505: 
             """shift"""
-            for sprite in self.dashable_list:
-                self.blockable_list.remove(sprite)
+            if not self.dashable_removed:
+                for sprite in self.dashable_list:
+                    self.blockable_list.remove(sprite)
             self.dashable_removed = True
                 
 

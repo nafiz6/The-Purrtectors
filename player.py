@@ -238,9 +238,12 @@ class Player(arcade.Sprite):
     def update_animation(self,delta_time = 1/60):
         if (self.dash_timer>0):
             self.dash_timer-=1
+            if (self.dash_timer < 5):
+                self.color = [255, 150, 150]
             if self.dash_timer == 0:
                 self.change_x = 0
                 self.change_y = 0
+                self.color = [255, 255, 255]
 
 
         self.animation_timer += delta_time
