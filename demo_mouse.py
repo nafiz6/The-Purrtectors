@@ -8,7 +8,7 @@ from player import Player
 # Constants
 SCREEN_WIDTH = 1300
 SCREEN_HEIGHT = 800
-SCREEN_TITLE = "Platformer"
+SCREEN_TITLE = "Outcast Cat"
 
 # Constants used to scale our sprites from their original size
 CHARACTER_SCALING = 1.5
@@ -50,18 +50,13 @@ def load_texture_pair(filename):
 
 
 class Enemy:
-
     def __init__(self):
         self.sprite = None
         self.health = 10
 
-
     def setup(self):
-
         image_source = "./tiles/5_enemies_1_idle_007.png"
-
         self.direction = RIGHT_FACING
-
         self.sprite = arcade.Sprite(image_source, ENEMY_SCALING)
         self.sprite.initial_x = 900
         self.sprite.center_x = 900
@@ -69,7 +64,6 @@ class Enemy:
         self.walk_range = 100
 
     def move(self):
-
         if self.sprite.change_x == 0:
             if self.direction == LEFT_FACING:
                 self.direction = RIGHT_FACING
@@ -96,9 +90,8 @@ class MyGame(arcade.Window):
     """
 
     def __init__(self):
-
         # Call the parent class and set up the window
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE,resizable=True)
 
         # These are 'lists' that keep track of our sprites. Each sprite should
         # go into a list.
@@ -106,6 +99,8 @@ class MyGame(arcade.Window):
         self.bullet_list = None
         self.player_list = None
         self.enemy_list = None
+        self.dashable_list=None
+        self.blockable_list=None
 
         # Separate variable that holds the player sprite
         self.player = None
@@ -119,7 +114,6 @@ class MyGame(arcade.Window):
         self.view_bottom = 0
         self.view_left = 0
 
-
         self.mouse_x = 160
         self.mouse_y = 0
 
@@ -130,47 +124,18 @@ class MyGame(arcade.Window):
         self.view_target_left = self.view_left
         self.view_target_bottom = self.view_bottom
 
-
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
 
-    def setup(self):
-        """ Set up the game here. Call this function to restart the game. """
-
-        # Used to keep track of our scrolling
-        self.view_bottom = 0
-        self.view_left = 0
-
-
-        # Create the Sprite lists
-        self.player_list = arcade.SpriteList()
-        self.enemy_list = arcade.SpriteList()
-        self.floor_list = arcade.SpriteList()
-        self.wall_list = arcade.SpriteList()
-        self.bullet_list = arcade.SpriteList()
-
-        # Set up the player, specifically placing it at these coordinates.
-        self.player = Player()
-        self.second_player = Player()
-        self.player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 350)
-        self.second_player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 200)
-        self.player_list.append(self.player)
-        self.player_list.append(self.second_player)
-
-        self.enemy = Enemy()
-        self.enemy.setup()
-        self.enemy_list.append(self.enemy.sprite)
-
-
-
-        # --- Load in a map from the tiled editor ---
+    def load_level(self,path_to_map,map_width,map_height,tile_width,tile_height,tile_scale):
+        """ Loads a level"""
 
         # Name of map file to load
-        map_name = "./maps/level-1.tmx"
+        map_name = path_to_map
         # Name of the layer in the file that has our platforms/walls
         platforms_layer_name = 'Floor'
         platforms_wall_layer_name = 'Walls'
+        platforms_dashable_layer_name='Dashable'
         platforms_props_layer_name = 'props'
-        # Name of the layer that has items for pick-up
 
         # Read in the tiled map
         my_map = arcade.tilemap.read_tmx(map_name)
@@ -191,41 +156,85 @@ class MyGame(arcade.Window):
                                                       scaling=TILE_SCALING,
                                                       use_spatial_hash=True)
 
+        self.dashable_list = arcade.tilemap.process_layer(map_object=my_map
+                                                        ,layer_name=platforms_dashable_layer_name,
+                                                        scaling=TILE_SCALING,
+                                                        use_spatial_hash=True)
+
+        self.level_width  = map_width*tile_width*tile_scale
+        self.level_height = map_height*tile_height*tile_scale
+
+
         # --- Other stuff
         # Set the background color
         if my_map.background_color:
             arcade.set_background_color(my_map.background_color)
 
+    def setup(self):
+        """ Set up the game here. Call this function to restart the game. """
+
+        # Used to keep track of our scrolling
+        self.view_bottom = 0
+        self.view_left = 0
+
+        # Create the Sprite lists
+        self.player_list = arcade.SpriteList()
+        self.enemy_list = arcade.SpriteList()
+        self.floor_list = arcade.SpriteList()
+        self.wall_list = arcade.SpriteList()
+        self.bullet_list = arcade.SpriteList()
+        self.dashable_list = arcade.SpriteList()
+        self.blockable_list = arcade.SpriteList()
+    
+        self.load_level("./maps/level-1.tmx",50,50,16,16,TILE_SCALING)
+
+        # Set up the player, specifically placing it at these coordinates.
+        self.player = Player()
+        self.second_player = Player()
+        self.player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 350)
+        self.second_player.setup("./tiles/still/still_left", CHARACTER_SCALING, 350, 200)
+        self.player_list.append(self.player)
+        self.player_list.append(self.second_player)
+
+        self.enemy = Enemy()
+        self.enemy.setup()
+        self.enemy_list.append(self.enemy.sprite)
+
+        for sprite in self.wall_list:
+            self.blockable_list.append(sprite)
+        for sprite in self.dashable_list:
+            self.blockable_list.append(sprite)
+
+        
+
         # Create the 'physics engine'
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
-                                                             self.wall_list,
+                                                             self.blockable_list,
                                                              )
         self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
-                                                             self.wall_list,
+                                                             self.blockable_list,
                                                              )
         self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
-                                                             self.wall_list,
+                                                             self.blockable_list,
                                                              )
 
     def on_draw(self):
         """ Render the screen. """
-
-        # Clear the screen to the background color
         arcade.start_render()
 
         # Draw our sprites
         self.floor_list.draw()
-        self.player_list.draw()
-        self.enemy_list.draw()
         self.wall_list.draw()
+        self.dashable_list.draw()
         self.bullet_list.draw()
         self.props_list.draw()
+        self.player_list.draw()
+        self.enemy_list.draw()
 
         # Draw our health on the screen, scrolling it with the viewport
         health_text = f"health: {self.player.health} enemy: {self.enemy.health} stamina: {self.player.stamina}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
                          arcade.csscolor.WHITE, 18)
-
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_RIGHT:
@@ -255,23 +264,16 @@ class MyGame(arcade.Window):
             self.player.change_x=0
             self.player.change_y=0
             
-
-
-
     def on_mouse_motion(self, x, y, dx, dy):
         #position of mouse relative to palyer
         self.mouse_x = x
         self.mouse_y = y
-
 
     def on_mouse_release(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.right_click = False
             self.player.change_x=0
             self.player.change_y=0
-
-
-            
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -322,6 +324,63 @@ class MyGame(arcade.Window):
             self.player.change_y = 0
             if self.player.change_x!=0:
                 self.player.direction_y = 0
+
+    def update_scroll(self):
+        changed_left = False
+        changed_bottom = False
+
+        # Scroll left
+        left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
+        if self.player.left < left_boundary and left_boundary > 0:
+            self.view_target_left = - left_boundary + self.player.left
+            changed_left = True
+
+        # Scroll right
+        right_boundary = self.view_left + SCREEN_WIDTH - RIGHT_VIEWPORT_MARGIN
+        if self.player.right > right_boundary and right_boundary<self.level_width-RIGHT_VIEWPORT_MARGIN:
+            print(right_boundary,self.level_width-RIGHT_VIEWPORT_MARGIN)
+            self.view_target_left = self.player.right - right_boundary
+            changed_left = True
+
+        # Scroll up
+        top_boundary = self.view_bottom + SCREEN_HEIGHT - TOP_VIEWPORT_MARGIN
+        if self.player.top > top_boundary and top_boundary<self.level_height-TOP_VIEWPORT_MARGIN:
+            self.view_target_bottom = self.player.top - top_boundary
+            changed_bottom = True
+
+        # Scroll down
+        bottom_boundary = self.view_bottom + BOTTOM_VIEWPORT_MARGIN
+        if self.player.bottom < bottom_boundary and bottom_boundary>BOTTOM_VIEWPORT_MARGIN:
+            self.view_target_bottom = - bottom_boundary + self.player.bottom
+            changed_bottom = True
+
+        if changed_bottom == False:
+            self.view_target_bottom = 0
+
+        if changed_left == False:
+            self.view_target_left = 0
+
+        if self.view_target_bottom!=self.view_bottom or self.view_target_left!=self.view_left:
+            # Only scroll to integers. Otherwise we end up with pixels that
+            # don't line up on the screen
+            self.view_left += self.view_target_left/10
+            self.view_bottom += self.view_target_bottom/10
+
+            self.view_bottom = int(self.view_bottom)
+            self.view_left = int(self.view_left)
+
+            self.view_left = max(0,self.view_left)
+            self.view_left = min(self.view_left,self.level_width-SCREEN_WIDTH)
+
+            self.view_bottom = max(0,self.view_bottom)
+            self.view_bottom = min(self.view_bottom,self.level_height-SCREEN_HEIGHT)
+
+            # Do the scrolling
+            arcade.set_viewport(self.view_left,
+                                SCREEN_WIDTH + self.view_left,
+                                self.view_bottom,
+                                SCREEN_HEIGHT + self.view_bottom)
+
 
     def on_update(self, delta_time):
 
@@ -391,73 +450,32 @@ class MyGame(arcade.Window):
                     self.player.sprite.change_y = 0
                     
         """
-
-        
-
-
-
         self.physics_engine.update()
         self.physics_engine_second.update()
         self.enemy_physics_engine.update()
 
-
-        # --- Manage Scrolling ---
-
-        # Track if we need to change the viewport
-
-        changed_left = False
-        changed_bottom = False
-
-        # Scroll left
-        left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
-        if self.player.left < left_boundary:
-            #self.view_left -= left_boundary - self.player.left
-            self.view_target_left = - left_boundary + self.player.left
-
-            changed_left = True
-
-        # Scroll right
-        right_boundary = self.view_left + SCREEN_WIDTH - RIGHT_VIEWPORT_MARGIN
-        if self.player.right > right_boundary:
-            #self.view_left += self.player.right - right_boundary
-            self.view_target_left = self.player.right - right_boundary
-            changed_left = True
-
-        # Scroll up
-        top_boundary = self.view_bottom + SCREEN_HEIGHT - TOP_VIEWPORT_MARGIN
-        if self.player.top > top_boundary:
-            #self.view_bottom += self.player.top - top_boundary
-            self.view_target_bottom = self.player.top - top_boundary
-            changed_bottom = True
-
-        # Scroll down
-        bottom_boundary = self.view_bottom + BOTTOM_VIEWPORT_MARGIN
-        if self.player.bottom < bottom_boundary:
-            #self.view_bottom -= bottom_boundary - self.player.bottom
-            self.view_target_bottom = - bottom_boundary + self.player.bottom
-            changed_bottom = True
-
-        if changed_bottom == False:
-            self.view_target_bottom = 0
-
-        if changed_left == False:
-            self.view_target_left = 0
-
-        if self.view_target_bottom!=self.view_bottom or self.view_target_left!=self.view_left:
-            # Only scroll to integers. Otherwise we end up with pixels that
-            # don't line up on the screen
-            self.view_left += self.view_target_left/10
-            self.view_bottom += self.view_target_bottom/10
+        self.update_scroll()
 
 
-            self.view_bottom = int(self.view_bottom)
-            self.view_left = int(self.view_left)
+        
 
-            # Do the scrolling
-            arcade.set_viewport(self.view_left,
+    def on_resize(self, width, height):
+        """ This method is automatically called when the window is resized. """
+
+        # Call the parent. Failing to do this will mess up the coordinates, and default to 0,0 at the center and the
+        # edges being -1 to 1.
+        super().on_resize(width, height)
+
+        # global SCREEN_WIDTH
+        # global SCREEN_HEIGHT
+        
+        # SCREEN_WIDTH, SCREEN_HEIGHT = width,height
+
+        arcade.set_viewport(self.view_left,
                                 SCREEN_WIDTH + self.view_left,
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
+        print(f"Window resized to: {width}, {height}")
 
 
 def main():
