@@ -127,8 +127,8 @@ class Player(arcade.Sprite):
 
             self.stamina -= 1
             
-            return [self.center_x + DASH_AMOUNT*relative_x, self.center_y + DASH_AMOUNT*relative_y]
-        return [self.center_x, self.center_y]
+            return (self.center_x + DASH_AMOUNT*relative_x, self.center_y + DASH_AMOUNT*relative_y)
+        return (self.center_x, self.center_y)
 
 
     def update(self):

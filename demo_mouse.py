@@ -295,7 +295,8 @@ class MyGame(arcade.Window):
         elif key == 65505: 
             """shift"""
             dash = self.player.dash()
-            print(dash[0], dash[1])
+            if(dash!=(self.player.center_x,self.player.center_y) and arcade.has_line_of_sight((self.player.center_x,self.player.center_y),dash,self.wall_list)):
+                    self.player.center_x,self.player.center_y = dash
             
 
         elif key == 32: #space
