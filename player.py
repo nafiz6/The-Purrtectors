@@ -1,6 +1,8 @@
 import arcade
 import math
 
+BULLET_SPEED = 15
+
 def magnitude(x, y):
     return math.sqrt(x*x + y*y)
 
@@ -30,7 +32,14 @@ class Player(arcade.Sprite):
         self.scale = None
 
         self.animation_timer = None
+        self.melee_sprite = None
+
+        self.melee_timer = None
+        self.melee_attacking = None
+        self.melee_idx = None
+        self.melee_list = None
  
+        self.bullet_list = None
 
 
     def setup(self, img_src, scale, start_x, start_y):
@@ -46,6 +55,7 @@ class Player(arcade.Sprite):
         sprite_sheet = img_src
 
         self.scale = scale
+        self.bullet_list = arcade.SpriteList()
 
         left_still = []
         right_still = []
@@ -90,6 +100,12 @@ class Player(arcade.Sprite):
 
         self.animation_timer = 0
 
+        self.melee_sprite = [arcade.Sprite(f'{img_src}-melee-0.png'), arcade.Sprite(f'{img_src}-melee-1.png'), arcade.Sprite(f'{img_src}-melee-0.png') ]
+        self.melee_attacking = False 
+        self.melee_idx = 0
+        self.melee_list = arcade.SpriteList()
+
+
 
     def dash(self):
         if self.stamina > 0:
@@ -111,12 +127,87 @@ class Player(arcade.Sprite):
 
             self.stamina -= 1
 
+
     def update(self):
         if self.stamina < 3:
             self.stamina_timer-= 1
             if (self.stamina_timer == 0):
                 self.stamina_timer = 100
                 self.stamina += 1
+
+
+
+    def melee_attack_animation(self):
+        
+        self.melee_list = arcade.SpriteList()
+        self.melee_sprite[self.melee_idx].center_x = self.center_x
+        self.melee_sprite[self.melee_idx].center_y = self.center_y
+
+        if self.facing_dir == 'RIGHT':
+            self.melee_sprite[self.melee_idx].center_x += self.width/2
+            self.melee_sprite[self.melee_idx].angle = 0
+            if (self.melee_idx == 0 or self.melee_idx == 2):
+                self.angle = 15
+            else:
+                self.angle = 30
+        elif self.facing_dir == 'LEFT':
+            self.melee_sprite[self.melee_idx].center_x -= self.width/2
+            self.melee_sprite[self.melee_idx].angle = 180
+            
+            if (self.melee_idx == 0 or self.melee_idx == 2):
+                self.angle = -15
+            else:
+                self.angle = -30
+        elif self.facing_dir == 'DOWN':
+            self.melee_sprite[self.melee_idx].center_y -= self.height/2
+            self.melee_sprite[self.melee_idx].angle = -90
+            
+        elif self.facing_dir == 'UP':
+            self.melee_sprite[self.melee_idx].center_y += self.height/2
+            self.melee_sprite[self.melee_idx].angle = 90
+        
+        
+        self.melee_list.append(self.melee_sprite[self.melee_idx])
+        
+
+
+    def melee(self):
+        if self.melee_attacking == False:
+            self.melee_timer = 0
+            self.melee_attacking = True
+            self.melee_attack_animation()
+
+    def range(self, x , y, view_left, view_bottom):
+
+        #create bullet
+        bullet = arcade.Sprite("./tiles/ray.png", 1)
+
+        #position at player
+        bullet.center_x = self.center_x
+        bullet.center_y = self.center_y
+
+        x_diff = x - self.center_x + view_left 
+        y_diff = y - self.center_y + view_bottom
+
+        angle = math.atan2(y_diff, x_diff)
+
+        bullet.angle = math.degrees(angle) + 90
+
+        bullet.change_x = math.cos(angle) * BULLET_SPEED
+        bullet.change_y = math.sin(angle) * BULLET_SPEED
+
+        self.bullet_list.append(bullet)
+        
+        #stop player motion
+        self.right_click = False
+        self.change_x=0
+        self.change_y=0
+        
+
+
+
+
+
             
     
     def update_animation(self,delta_time = 1/60):
@@ -131,8 +222,25 @@ class Player(arcade.Sprite):
             self.facing_dir='UP'
         if self.change_y<0 and self.facing_dir != 'DOWN':
             self.facing_dir='DOWN'
+
+        if self.melee_attacking:
+            self.change_x = 0
+            self.change_y = 0
+            self.melee_timer += delta_time
+            if self.melee_timer > 0.11:
+                self.melee_timer = 0
+
+                self.melee_idx += 1
+                if self.melee_idx == 3:
+                    self.melee_attacking = False
+                    self.melee_idx = 0 
+                    self.melee_list = arcade.SpriteList()
+                    self.angle = 0
+
+                else:
+                    self.melee_attack_animation()
         
-        if (self.animation_timer > 0.1):
+        if (self.animation_timer > 0.2):
             self.animation_timer = 0
             self.curr_idx+=1
             if(self.curr_idx==4):

@@ -18,11 +18,10 @@ SPRITE_PIXEL_SIZE = 16
 GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * TILE_SCALING)
 
 # Movement speed of player, in pixels per frame
-PLAYER_MOVEMENT_SPEED = 5
+PLAYER_MOVEMENT_SPEED = 4
 PLAYER_DASH_SPEED = 50
 GRAVITY = 0
 PLAYER_JUMP_SPEED = 20
-BULLET_SPEED = 15
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
@@ -34,18 +33,9 @@ TOP_VIEWPORT_MARGIN = 250
 RIGHT_FACING=0
 LEFT_FACING=1
 
+CUTSCENE_1 = 1
+PLAYTHROUGH_1 = 2
 
-
-def load_texture_pair(filename):
-    """
-    Load a texture pair, with the second being a mirror image.
-    """
-    return [
-        arcade.load_texture(filename),
-        arcade.load_texture(filename, flipped_horizontally=True)
-    ]
-
-        
 
 
 
@@ -103,7 +93,6 @@ class MyGame(arcade.Window):
         # These are 'lists' that keep track of our sprites. Each sprite should
         # go into a list.
         self.wall_list = None
-        self.bullet_list = None
         self.player_list = None
         self.enemy_list = None
 
@@ -133,6 +122,8 @@ class MyGame(arcade.Window):
 
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
 
+        self.state = None
+
     def setup(self):
         """ Set up the game here. Call this function to restart the game. """
 
@@ -140,13 +131,13 @@ class MyGame(arcade.Window):
         self.view_bottom = 0
         self.view_left = 0
 
+        self.state = CUTSCENE_1
 
         # Create the Sprite lists
         self.player_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.floor_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
-        self.bullet_list = arcade.SpriteList()
 
         # Set up the player, specifically placing it at these coordinates.
         self.player = Player()
@@ -197,15 +188,18 @@ class MyGame(arcade.Window):
             arcade.set_background_color(my_map.background_color)
 
         # Create the 'physics engine'
+        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
+                                                             self.wall_list,
+                                                             )
+
+    def setup_post_cut_scene(self):
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                              self.wall_list,
                                                              )
         self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
                                                              self.wall_list,
                                                              )
-        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
-                                                             self.wall_list,
-                                                             )
+
 
     def on_draw(self):
         """ Render the screen. """
@@ -218,8 +212,11 @@ class MyGame(arcade.Window):
         self.player_list.draw()
         self.enemy_list.draw()
         self.wall_list.draw()
-        self.bullet_list.draw()
+        self.player.bullet_list.draw()
         self.props_list.draw()
+
+        if self.player.melee_attacking:
+            self.player.melee_list.draw()
 
         # Draw our health on the screen, scrolling it with the viewport
         health_text = f"health: {self.player.health} enemy: {self.enemy.health} stamina: {self.player.stamina}"
@@ -229,34 +226,9 @@ class MyGame(arcade.Window):
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_RIGHT:
-            self.right_click = True
+            self.player.melee()
         elif button == arcade.MOUSE_BUTTON_LEFT:
-            #create bullet
-            bullet = arcade.Sprite("./tiles/ray.png", 1)
-
-            #position at player
-            bullet.center_x = self.player.center_x
-            bullet.center_y = self.player.center_y
-
-            x_diff = x - self.player.left + self.view_left - 30
-            y_diff = y - self.player.bottom + self.view_bottom - 30
-
-            angle = math.atan2(y_diff, x_diff)
-
-            bullet.angle = math.degrees(angle) + 90
-
-            bullet.change_x = math.cos(angle) * BULLET_SPEED
-            bullet.change_y = math.sin(angle) * BULLET_SPEED
-
-            self.bullet_list.append(bullet)
-            
-            #stop player motion
-            self.right_click = False
-            self.player.change_x=0
-            self.player.change_y=0
-            
-
-
+            self.player.range(x, y, self.view_left, self.view_bottom)
 
     def on_mouse_motion(self, x, y, dx, dy):
         #position of mouse relative to palyer
@@ -333,15 +305,21 @@ class MyGame(arcade.Window):
 
     def on_update(self, delta_time):
 
+        if (self.state == CUTSCENE_1):
+            self.state = PLAYTHROUGH_1
+            self.setup_post_cut_scene()
+
+
+
         self.player.update_animation()
 
         self.player.update()
         self.second_player.update()
 
-        self.bullet_list.update()
+        self.player.bullet_list.update()
         self.enemy.move()
 
-        for bullet in self.bullet_list:
+        for bullet in self.player.bullet_list:
             wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
             enemy_hit_list = arcade.check_for_collision(bullet, self.enemy.sprite)
 
@@ -355,21 +333,39 @@ class MyGame(arcade.Window):
                 bullet.remove_from_sprite_lists()
 
 
-        for enemy in self.enemy_list:
-            hit_list = arcade.check_for_collision(enemy, self.player)
+        hit_list = arcade.check_for_collision_with_list(self.player, self.enemy_list)
+        for enemy in hit_list:
 
-            if hit_list:
-                self.player.health-=1
+            self.player.health-=1
 
+            if enemy.bottom > self.player.bottom:
+                self.player.bottom -= 100
+            elif enemy.bottom < self.player.bottom:
+                self.player.bottom += 100
+
+            if enemy.left > self.player.left:
+                self.player.left -= 100
+            elif enemy.left < self.player.left:
+                self.player.left += 100
+
+        
+        if self.player.melee_attacking:
+            print(self.player.melee_idx)
+            hit_list = arcade.check_for_collision_with_list(self.player.melee_sprite[self.player.melee_idx], self.enemy_list)
+
+            for enemy in hit_list:
+                enemy.health -= 1
                 if enemy.bottom > self.player.bottom:
-                    self.player.bottom -= 100
+                    enemy.bottom += 100
                 elif enemy.bottom < self.player.bottom:
-                    self.player.bottom += 100
+                    enemy.bottom -= 100
 
                 if enemy.left > self.player.left:
-                    self.player.left -= 100
+                    enemy.left += 100
                 elif enemy.left < self.player.left:
-                    self.player.left += 100
+                    enemy.left -= 100
+        
+
 
 
         """ Movement and game logic """
