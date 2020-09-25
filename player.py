@@ -94,7 +94,7 @@ class Player(arcade.Sprite):
         self.walk_textures['UP'] = up_walk
         self.walk_textures['DOWN'] = down_walk
 
-        self.facing_dir = 'UP'
+        self.facing_dir = 'LEFT'
 
         self.texture = self.still_textures['UP'][self.curr_idx]
 
@@ -104,6 +104,9 @@ class Player(arcade.Sprite):
         self.melee_attacking = False 
         self.melee_idx = 0
         self.melee_list = arcade.SpriteList()
+
+    def set_brightness(self, brightness):
+        self.color = [brightness, brightness, brightness]
 
 
 
