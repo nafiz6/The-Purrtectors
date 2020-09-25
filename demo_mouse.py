@@ -217,6 +217,13 @@ class MyGame(arcade.Window):
         health_1.center_y = 550
         self.health_pickup_list.append(health_1)
 
+        for tile in self.floor_list:
+            tile.color = [200, 200, 255]
+        for tile in self.wall_list:
+            tile.color = [200, 200, 255]
+        for tile in self.wall_list:
+            tile.color = [200, 200, 255]
+
 
         
 
@@ -500,7 +507,7 @@ class MyGame(arcade.Window):
             hit_list = arcade.check_for_collision_with_list(self.player.melee_sprite[self.player.melee_idx], self.enemy_list)
 
             for enemy in hit_list:
-                enemy.health -= 1
+                self.enemy.health -= 1
                 if enemy.bottom > self.player.bottom:
                     enemy.bottom += 100
                 elif enemy.bottom < self.player.bottom:
