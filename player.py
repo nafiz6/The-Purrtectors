@@ -20,7 +20,7 @@ class Player(arcade.Sprite):
         self.curr_idx = 0
 
         self.sprite = None
-        self.health = 10
+        self.health = None
 
         self.stamina_timer = 0
         self.stamina = 3
@@ -40,6 +40,9 @@ class Player(arcade.Sprite):
         self.melee_list = None
  
         self.bullet_list = None
+        self.movement_speed = None
+        
+        self.dash_timer = 0
 
 
     def setup(self, img_src, scale, start_x, start_y):
@@ -51,6 +54,8 @@ class Player(arcade.Sprite):
 
         self.direction_x = 0
         self.direction_y = 0
+
+        self.movement_speed = 4
 
         sprite_sheet = img_src
 
@@ -105,9 +110,15 @@ class Player(arcade.Sprite):
         self.melee_idx = 0
         self.melee_list = arcade.SpriteList()
 
+        self.health = 5
+
+
+    def health_pickup(self):
+        self.health = 5
+        self.movement_speed = 4
+
     def set_brightness(self, brightness):
         self.color = [brightness, brightness, brightness]
-
 
 
     def dash(self):
@@ -126,6 +137,17 @@ class Player(arcade.Sprite):
             relative_y /= relative_magnitude
 
             self.stamina -= 1
+
+            self.dash_timer = 10
+            if relative_x < 0:
+                self.change_x -= 20
+            elif relative_x > 0:
+                self.change_x += 20
+            if relative_y < 0:
+                self.change_y -= 20
+            elif relative_y > 0:
+                self.change_y += 20
+
             
             return (self.center_x + DASH_AMOUNT*relative_x, self.center_y + DASH_AMOUNT*relative_y)
         return (self.center_x, self.center_y)
@@ -214,6 +236,12 @@ class Player(arcade.Sprite):
             
     
     def update_animation(self,delta_time = 1/60):
+        if (self.dash_timer>0):
+            self.dash_timer-=1
+            if self.dash_timer == 0:
+                self.change_x = 0
+                self.change_y = 0
+
 
         self.animation_timer += delta_time
 

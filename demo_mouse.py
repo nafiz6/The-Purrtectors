@@ -90,6 +90,7 @@ class MyGame(arcade.Window):
         self.enemy_list = None
         self.dashable_list=None
         self.blockable_list=None
+        self.health_pickup_list=None
 
         self.can_control = None
 
@@ -160,6 +161,8 @@ class MyGame(arcade.Window):
         self.level_width  = map_width*tile_width*tile_scale
         self.level_height = map_height*tile_height*tile_scale
 
+        self.dashable_removed = None
+
 
         # --- Other stuff
         # Set the background color
@@ -177,6 +180,8 @@ class MyGame(arcade.Window):
         self.cutscene_timer = 0
         self.can_control = False
 
+        self.dashable_removed = False
+
         # Create the Sprite lists
         self.player_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
@@ -185,6 +190,7 @@ class MyGame(arcade.Window):
         self.bullet_list = arcade.SpriteList()
         self.dashable_list = arcade.SpriteList()
         self.blockable_list = arcade.SpriteList()
+        self.health_pickup_list = arcade.SpriteList()
     
         self.load_level("./maps/level-1.tmx",50,50,16,16,TILE_SCALING)
 
@@ -204,6 +210,13 @@ class MyGame(arcade.Window):
             self.blockable_list.append(sprite)
         for sprite in self.dashable_list:
             self.blockable_list.append(sprite)
+
+        #health pickups
+        health_1 = arcade.Sprite("./images/animals/PNG/Round/parrot.png", 0.4)
+        health_1.center_x = 350
+        health_1.center_y = 550
+        self.health_pickup_list.append(health_1)
+
 
         
 
@@ -237,6 +250,7 @@ class MyGame(arcade.Window):
         self.wall_list.draw()
         self.player_list.draw()
         self.enemy_list.draw()
+        self.health_pickup_list.draw()
 
         if self.player.melee_attacking:
             self.player.melee_list.draw()
@@ -244,7 +258,7 @@ class MyGame(arcade.Window):
         # Draw our health on the screen, scrolling it with the viewport
         health_text = f"health: {self.player.health} enemy: {self.enemy.health} stamina: {self.player.stamina}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
-                         arcade.csscolor.WHITE, 18)
+                         arcade.csscolor.WHITE, 27, bold = True)
 
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.can_control:
@@ -273,30 +287,36 @@ class MyGame(arcade.Window):
         """Called whenever a key is pressed. """
 
         if key == arcade.key.UP or key == arcade.key.W:
-            self.player.change_y = PLAYER_MOVEMENT_SPEED
-            self.player.direction_y = PLAYER_MOVEMENT_SPEED
+            self.player.change_y = self.player.movement_speed
+            self.player.direction_y = self.player.movement_speed
             if self.player.change_x == 0:
                 self.player.direction_x = 0
         elif key == arcade.key.DOWN or key == arcade.key.S:
-            self.player.change_y = -PLAYER_MOVEMENT_SPEED
-            self.player.direction_y = -PLAYER_MOVEMENT_SPEED
+            self.player.change_y = -self.player.movement_speed
+            self.player.direction_y = -self.player.movement_speed
             if self.player.change_x == 0:
                 self.player.direction_x = 0
         elif key == arcade.key.LEFT or key == arcade.key.A:
-            self.player.change_x = -PLAYER_MOVEMENT_SPEED
-            self.player.direction_x = -PLAYER_MOVEMENT_SPEED
+            self.player.change_x = -self.player.movement_speed
+            self.player.direction_x = -self.player.movement_speed
             if self.player.change_y == 0:
                 self.player.direction_y = 0
         elif key == arcade.key.RIGHT or key == arcade.key.D:
-            self.player.change_x = PLAYER_MOVEMENT_SPEED
-            self.player.direction_x = PLAYER_MOVEMENT_SPEED
+            self.player.change_x = self.player.movement_speed
+            self.player.direction_x = self.player.movement_speed
             if self.player.change_y == 0:
                 self.player.direction_y = 0
         elif key == 65505: 
             """shift"""
+            for sprite in self.dashable_list:
+                self.blockable_list.remove(sprite)
+            self.dashable_removed = True
+                
+
             dash = self.player.dash()
-            if(dash!=(self.player.center_x,self.player.center_y) and arcade.has_line_of_sight((self.player.center_x,self.player.center_y),dash,self.wall_list)):
-                    self.player.center_x,self.player.center_y = dash
+            #if(dash!=(self.player.center_x,self.player.center_y) and arcade.has_line_of_sight((self.player.center_x,self.player.center_y),dash,self.wall_list)):
+            #        self.player.center_x,self.player.center_y = dash
+            
             
 
         elif key == 32: #space
@@ -344,7 +364,6 @@ class MyGame(arcade.Window):
         # Scroll right
         right_boundary = self.view_left + SCREEN_WIDTH - RIGHT_VIEWPORT_MARGIN
         if self.player.right > right_boundary and right_boundary<self.level_width-RIGHT_VIEWPORT_MARGIN:
-            print(right_boundary,self.level_width-RIGHT_VIEWPORT_MARGIN)
             self.view_target_left = self.player.right - right_boundary
             changed_left = True
 
@@ -389,25 +408,29 @@ class MyGame(arcade.Window):
 
 
     def animate_cutscene_1(self, delta_time):
+        if (self.cutscene_timer == 0):
+            self.player.set_brightness(0)
+            self.player.health = 2
+            self.player.movement_speed = 1
+
+
         self.cutscene_timer += delta_time 
 
-        if (self.cutscene_timer < 5):
-            self.player.set_brightness(0)
         if (self.cutscene_timer > 5):
             brightness = self.player.color[0]
             brightness += 10
             if (brightness > 255):
                 brightness = 255
             self.player.set_brightness(brightness)
-            self.player.change_angle = 4
+            self.player.change_angle = 7
             self.player.change_x  = -5
-            self.player.change_y = 1
+            self.player.change_y = 0
 
         if self.cutscene_timer > 6:
             self.player.change_angle = 0
             self.player.angle = 0
-            self.player.change_x = 0
             self.player.change_y = 0
+            self.player.change_x = 0
 
             self.can_control = True
 
@@ -417,6 +440,11 @@ class MyGame(arcade.Window):
 
     def on_update(self, delta_time):
 
+        if (self.dashable_removed and self.player.dash_timer==0):
+            self.dashable_removed = False
+        
+            for sprite in self.dashable_list:
+                self.blockable_list.append(sprite)
 
 
         self.update_scroll()
@@ -445,6 +473,11 @@ class MyGame(arcade.Window):
             if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
                 bullet.remove_from_sprite_lists()
 
+        for health in self.health_pickup_list:
+            pickup = arcade.check_for_collision(health, self.player)
+            if pickup:
+                health.remove_from_sprite_lists()
+                self.player.health_pickup()
 
         hit_list = arcade.check_for_collision_with_list(self.player, self.enemy_list)
         for enemy in hit_list:
@@ -463,7 +496,6 @@ class MyGame(arcade.Window):
 
         
         if self.player.melee_attacking:
-            print(self.player.melee_idx)
             hit_list = arcade.check_for_collision_with_list(self.player.melee_sprite[self.player.melee_idx], self.enemy_list)
 
             for enemy in hit_list:
