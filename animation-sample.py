@@ -1,5 +1,15 @@
 import arcade
 
+VIEWPORT_MARGIN = 5
+WIDTH = 25*16
+HEIGHT = 10*16
+TILE_SCALE = 1
+SPRITE_SCALE = 1
+
+SCREEN_WIDTH=WIDTH
+SCREEN_HEIGHT=HEIGHT
+
+
 class ZeldaPlayer(arcade.Sprite):
     def __init__(self):
         super().__init__()
@@ -45,21 +55,14 @@ class ZeldaPlayer(arcade.Sprite):
             self.curr_idx=0
         else:
             self.curr_idx+=1
-            if(self.curr_idx==4):
+            if(self.curr_idx==len(self.textures[self.facing_dir])):
                 self.curr_idx=0
             self.texture=self.textures[self.facing_dir][self.curr_idx]
-
-        
-        
-        
-
-        
-        
 
 
 class ZeldaWindow(arcade.Window):
     def __init__(self,width,height,title):
-        super().__init__(width,height,title)
+        super().__init__(width,height,title,resizable=True)
         arcade.set_background_color(arcade.color.WHITE)
 
         self.enemies_list = arcade.SpriteList()
@@ -73,6 +76,10 @@ class ZeldaWindow(arcade.Window):
         self.left_pressed = None
         self.right_pressed = None
 
+
+        # Used in scrolling
+        self.view_bottom = 0
+        self.view_left = 0
 
     def setup(self):
         my_map = arcade.read_tmx("images/zelda.tmx")
@@ -103,9 +110,6 @@ class ZeldaWindow(arcade.Window):
         self.right_pressed = False
 
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,self.foundation)
-
-
-        
 
     def on_draw(self):
         arcade.start_render()
@@ -153,19 +157,80 @@ class ZeldaWindow(arcade.Window):
             self.player.change_y=-1
         else:
             self.player.change_y=0
-        
 
-        
+    def on_resize(self, width, height):
+        """ This method is automatically called when the window is resized. """
 
+        # Call the parent. Failing to do this will mess up the coordinates, and default to 0,0 at the center and the
+        # edges being -1 to 1.
+        super().on_resize(width, height)
+
+        # global SCREEN_WIDTH
+        # global SCREEN_HEIGHT
+        
+        # SCREEN_WIDTH, SCREEN_HEIGHT = width,height
+
+        arcade.set_viewport(self.view_left,
+                                SCREEN_WIDTH + self.view_left,
+                                self.view_bottom,
+                                SCREEN_HEIGHT + self.view_bottom)
+        print(f"Window resized to: {width}, {height}")
+        
     def on_update(self, delta_time):
         self.player.update_animation()
         self.player_list.update()
         self.physics_engine.update()
 
+        # --- Manage Scrolling ---
+
+        # Keep track of if we changed the boundary. We don't want to call the
+        # set_viewport command if we didn't change the view port.
+        changed = False
+
+        # Scroll left
+        left_boundary = self.view_left + VIEWPORT_MARGIN
+        if self.player.left < left_boundary:
+            self.view_left -= left_boundary - self.player.left
+            changed = True
+
+        # Scroll right
+        right_boundary = self.view_left + SCREEN_WIDTH - VIEWPORT_MARGIN
+        if self.player.right > right_boundary:
+            self.view_left += self.player.right - right_boundary
+            changed = True
+
+        # Scroll up
+        top_boundary = self.view_bottom + SCREEN_HEIGHT - VIEWPORT_MARGIN
+        if self.player.top > top_boundary:
+            self.view_bottom += self.player.top - top_boundary
+            changed = True
+
+        # Scroll down
+        bottom_boundary = self.view_bottom + VIEWPORT_MARGIN
+        if self.player.bottom < bottom_boundary:
+            self.view_bottom -= bottom_boundary - self.player.bottom
+            changed = True
+
+        
+        # Make sure our boundaries are integer values. While the view port does
+        # support floating point numbers, for this application we want every pixel
+        # in the view port to map directly onto a pixel on the screen. We don't want
+        # any rounding errors.
+        self.view_left = int(self.view_left)
+        self.view_bottom = int(self.view_bottom)
+
+        # If we changed the boundary values, update the view port to match
+        if changed:
+            arcade.set_viewport(self.view_left,
+                                SCREEN_WIDTH + self.view_left,
+                                self.view_bottom,
+                                SCREEN_HEIGHT + self.view_bottom)
+
+
 
 def main():
     """ Main method """
-    window = ZeldaWindow(800,600,'ZeldaWindow')
+    window = ZeldaWindow(WIDTH,HEIGHT,'ZeldaWindow')
     window.setup()
     arcade.run()
 
