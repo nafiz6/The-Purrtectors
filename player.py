@@ -6,13 +6,26 @@ BULLET_SPEED = 15
 def magnitude(x, y):
     return math.sqrt(x*x + y*y)
 
+
+
+CUTSCENE_1 = 1
+PLAYTHROUGH_1 = 2
+PLAYTHROUGH_2 = 3
+PLAYTHROUGH_3 = 4
+PLAYTHROUGH_4 = 5
+PLAYTHROUGH_5 = 6
+PLAYTHROUGH_6 = 7
+PLAYTHROUGH_7 = 8
+CUTSCENE_2 = 9
+
 DASH_AMOUNT = 200
 
 class Player(arcade.Sprite):
 
-    def __init__(self):
+    def __init__(self, window):
         super().__init__()
 
+        self.window = window
         self.walk_textures = {}
         self.still_textures = {}
         
@@ -63,8 +76,16 @@ class Player(arcade.Sprite):
         self.bullet_regen_timer = None
 
         self.hud_sprite = None
+        self.canRange = None
 
     def setup(self, img_src, scale, start_x, start_y, cat_type):
+        self.canRange = True
+        if cat_type == 2:
+            self.color = [255, 220, 220]
+        if cat_type == 3:
+            self.color = [220, 244, 220]
+        if cat_type == 4:
+            self.color = [210, 210, 255]
 
         self.dead = False
 
@@ -193,8 +214,10 @@ class Player(arcade.Sprite):
         self.color = [brightness, brightness, brightness]
 
     def getDamaged(self, from_x, from_y):
+        print(self.dead)
         if self.dead:
             return
+        
         x = 0
         y = 0
         if from_x > self.center_x:
@@ -207,12 +230,18 @@ class Player(arcade.Sprite):
             y += 1
         self.dash(x, y)
         self.health -= 1
-        if self.health == 0:
-            self.dead = True
-            self.facing_dir = 'RIGHT'
-            self.angle = 90
-            self.change_x = 0
-            self.change_y = 0
+        if self.health <= 0:
+            if self.window.state >= PLAYTHROUGH_5:
+                self.state = PLAYTHROUGH_5
+                self.health = self.max_health
+                self.center_x = 2000
+                self.center_y = 300
+            else:
+                self.dead = True
+                self.facing_dir = 'RIGHT'
+                self.angle = 90
+                self.change_x = 0
+                self.change_y = 0
 
     def dash(self, x=0, y=0):
         if self.dead:
@@ -350,7 +379,8 @@ class Player(arcade.Sprite):
 
 
     def range(self, x , y, view_left, view_bottom):
-        if self.dead or self.bullet_regen_timer > 0:
+        
+        if not self.canRange or self.dead or self.bullet_regen_timer > 0:
             return
 
         if (self.type == 1 or self.type == 4):
@@ -378,8 +408,7 @@ class Player(arcade.Sprite):
             
             #stop player motion
             self.right_click = False
-            self.change_x=0
-            self.change_y=0
+
             self.rem_bullets -= 1
             if self.rem_bullets == 0:
                 self.bullet_regen_timer = 75

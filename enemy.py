@@ -6,6 +6,16 @@ BULLET_SPEED = 15
 SCREEN_WIDTH = 1300
 SCREEN_HEIGHT = 1000
 
+CUTSCENE_1 = 1
+PLAYTHROUGH_1 = 2
+PLAYTHROUGH_2 = 3
+PLAYTHROUGH_3 = 4
+PLAYTHROUGH_4 = 5
+PLAYTHROUGH_5 = 6
+PLAYTHROUGH_6 = 7
+PLAYTHROUGH_7 = 8
+CUTSCENE_2 = 9
+
 TURRET = 1
 RANGE = 2
 MELEE = 3
@@ -127,7 +137,7 @@ class Enemy(arcade.Sprite):
             self.scale = 0.5
 
         if enemy_type == MELEE:
-            self.scale = 2
+            self.scale = 2.5
 
 
 
@@ -164,7 +174,7 @@ class Enemy(arcade.Sprite):
         self.init_y = self.center_y
 
         self.range_x = (max(self.init_x-500,0),min(self.init_x+500,self.window.level_width))
-        self.range_y = (max(self.init_y-500,0),min(self.init_y+500,self.window.level_height))
+        self.range_y = (max(self.init_y-400,0),min(self.init_y+400,self.window.level_height))
         
         self.barrier_list = arcade.AStarBarrierList(self.window.player,
                                                     self.window.blockable_list,
@@ -183,9 +193,6 @@ class Enemy(arcade.Sprite):
         self.melee_attacking_sound = arcade.load_sound('sounds/effects/knifeSlice.ogg')
         self.shooting_sound = arcade.load_sound('sounds/effects/laser2.ogg')
 
-    def health_pickup(self):
-        self.health = 5
-        self.movement_speed = 4
 
     def set_brightness(self, brightness):
         self.color = [brightness, brightness, brightness]
@@ -321,8 +328,17 @@ class Enemy(arcade.Sprite):
             y += 1
 
         self.dash(x, y)
+        print(self.health)
         self.health -= 1
+        print(self.health)
         if self.health <= 0:
+            if self.window.state == PLAYTHROUGH_5:
+                self.window.story_idx = 8
+                self.window.state = PLAYTHROUGH_6
+                self.window.player.canRange = True
+            elif self.window.state == PLAYTHROUGH_6:
+                self.window.story_idx = 9
+                self.window.state = PLAYTHROUGH_7
             self.dead = True
             self.facing_dir = 'RIGHT'
             self.angle = 45

@@ -29,8 +29,8 @@ PLAYER_JUMP_SPEED = 20
 # and the edge of the screen.
 LEFT_VIEWPORT_MARGIN = 350
 RIGHT_VIEWPORT_MARGIN = 520
-BOTTOM_VIEWPORT_MARGIN = 250
-TOP_VIEWPORT_MARGIN = 250
+BOTTOM_VIEWPORT_MARGIN = 370
+TOP_VIEWPORT_MARGIN = 370
 
 RIGHT_FACING=0
 LEFT_FACING=1
@@ -40,6 +40,10 @@ PLAYTHROUGH_1 = 2
 PLAYTHROUGH_2 = 3
 PLAYTHROUGH_3 = 4
 PLAYTHROUGH_4 = 5
+PLAYTHROUGH_5 = 6
+PLAYTHROUGH_6 = 7
+PLAYTHROUGH_7 = 8
+CUTSCENE_2 = 9
 
 BLACK_BAR_HEIGHT = 100
 
@@ -220,24 +224,23 @@ class MyGame(arcade.Window):
         self.load_level("./maps/level-1.tmx","sounds/scores/level-1.mp3",50,50,16,16,TILE_SCALING)
         arcade.play_sound(self.level_sound)
         # Set up the player, specifically placing it at these coordinates.
-        self.player = Player()
-        self.second_player = Player()
-        self.third_player = Player()
-        self.fourth_player = Player()
+        self.player = Player(self)
+        self.second_player = Player(self)
         self.player.setup("./characters/cat", CHARACTER_SCALING, 550, 1020, 1)
-        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 350, 200, 2)
-        self.third_player.setup("./characters/cat", CHARACTER_SCALING, 350, 400, 3)
-        self.fourth_player.setup("./characters/cat", CHARACTER_SCALING*1.2, 350, 416, 4)
+        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 3000 , 3400, 2)
+        #self.third_player.setup("./characters/cat", CHARACTER_SCALING, 350, 400, 3)
+        #self.fourth_player.setup("./characters/cat", CHARACTER_SCALING*1.2, 350, 416, 4)
         self.player_list.append(self.player)
-        self.player_list.append(self.second_player)
-        self.player_list.append(self.third_player)
-        self.player_list.append(self.fourth_player)
+        #self.player_list.append(self.second_player)
+        #self.player_list.append(self.third_player)
+        #self.player_list.append(self.fourth_player)
         self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
     
 
         self.enemy = Turret(self)
         self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2000, 300, TURRET)
         self.enemy_list.append(self.enemy)
+        print(self.enemy.dead)
 
         self.enemy_2 = Enemy(self)
         self.enemy_2.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 3000, 300, MELEE)
@@ -257,19 +260,29 @@ class MyGame(arcade.Window):
         self.enemy_4.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2800, 1660, TURRET)
         self.enemy_list.append(self.enemy_4)
         
-        self.boss = Turret(self)
-        self.boss.setup("./characters/enemies/Boss (maybe)/png/boss", CHARACTER_SCALING, 2800, 2500, BOSS)
-        self.enemy_list.append(self.boss)
+        self.enemy_5 = Enemy(self)
+        self.enemy_5.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 3000, 1560, MELEE)
+        self.enemy_list.append(self.enemy_5)
+
+        self.enemy_6 = Turret(self)
+        self.enemy_6.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2800, 1400, TURRET)
+        self.enemy_list.append(self.enemy_6)
+        
         for sprite in self.wall_list:
             self.blockable_list.append(sprite)
         for sprite in self.dashable_list:
             self.blockable_list.append(sprite)
 
         #health pickups
-        health_1 = arcade.Sprite("./images/animals/PNG/Round/parrot.png", 0.4)
-        health_1.center_x = 350
-        health_1.center_y = 550
+        health_1 = arcade.Sprite("./effects/hpa/hpa/hpa.png")
+        health_2 = arcade.Sprite("./effects/hpa/hpa/hpa.png")
+        health_1.center_x = 2700
+        health_1.center_y = 1100
         self.health_pickup_list.append(health_1)
+
+        health_2.center_x = 350
+        health_2.center_y = 550
+        self.health_pickup_list.append(health_2)
 
         for tile in self.floor_list:
             tile.color = [200, 200, 255]
@@ -299,9 +312,6 @@ class MyGame(arcade.Window):
             
 
 
-        self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
-                                                             self.blockable_list,
-                                                             )
 
         for enemy in self.enemy_list:
             self.physics_engines.append(
@@ -313,7 +323,38 @@ class MyGame(arcade.Window):
                                                             self.enemy_list
                                                              )
         """
-        self.enemy.barrier_list.recalculate()
+        #self.enemy.barrier_list.recalculate()
+
+    def setup_2(self):
+        self.player_list = arcade.SpriteList()
+        self.enemy_list = arcade.SpriteList()
+        self.floor_list = arcade.SpriteList()
+        self.wall_list = arcade.SpriteList()
+        self.dashable_list = arcade.SpriteList()
+        self.blockable_list = arcade.SpriteList()
+        self.health_pickup_list = arcade.SpriteList()
+
+        self.load_level("./maps/level-3.tmx","sounds/scores/level-1.mp3",50,50,16,16,TILE_SCALING)
+        
+
+        # Set up the player, specifically placing it at these coordinates.
+        self.player = Player(self)
+        self.second_player = Player(self)
+        self.player.setup("./characters/cat", CHARACTER_SCALING, 1000, 200, 1)
+        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 1200 , 300, 2)
+        self.third_player.setup("./characters/cat", CHARACTER_SCALING, 1200 , 100, 2)
+        self.fourth_player.setup("./characters/cat", CHARACTER_SCALING, 1000 , 400, 2)
+        #self.third_player.setup("./characters/cat", CHARACTER_SCALING, 350, 400, 3)
+        #self.fourth_player.setup("./characters/cat", CHARACTER_SCALING*1.2, 350, 416, 4)
+        self.player_list.append(self.player)
+        self.player_list.append(self.second_player)
+        self.player_list.append(self.third_player)
+        self.player_list.append(self.fourth_player)
+
+        self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
+    
+
+
 
 
     def setup_post_cut_scene(self):
@@ -388,7 +429,18 @@ class MyGame(arcade.Window):
                  "Cat: I'm weak. I need to find something to heal", 
                  "Cat: That's a lot better! I need to figure out what's going on.",
                  "Cat: Maybe I can dash over that hole \n Press Shift to Dash",
-                 ""]
+                 "",
+                 "Cat: Oh no! Danger Ahead!\n Right click to scratch",
+                 "I think I can salvage the robot's laser \n Left click to shoot laser",
+                 "Why are there so many robots?!",
+                 "Cat Two: Wow! You seem to be good at this!",
+                 "One: WHAT THE HECK IS GOING ON?!",
+                 "TWO: Everyone hates us now",
+                 "TWO: ...we have to fight for our lives",
+                 "TWO: You coming with me?",
+                 "ONE: umm...",
+                 "TWO: Unless you wanna hide here forever..",
+                 "ONE: ok..."]
 
 
         # Draw our health on the screen, scrolling it with the viewport
@@ -459,6 +511,9 @@ class MyGame(arcade.Window):
                 self.player.direction_y = 0
         elif key == 65505: 
             """shift"""
+            if (self.state == CUTSCENE_2):
+                if (self.story_idx < len(self.plot_text) -1 ):
+                    self.story_idx += 1
 
             if (self.player.type == 1):
 
@@ -570,6 +625,7 @@ class MyGame(arcade.Window):
 
 
     def animate_cutscene_1(self, delta_time):
+        self.player.canRange = False
         self.cutscene_timer += delta_time 
         if (self.cutscene_timer == delta_time):
             self.player.set_brightness(0)
@@ -626,11 +682,72 @@ class MyGame(arcade.Window):
     def playthrough_4(self, delta_time):
         if self.player.center_x > 1159:
             self.story_idx = 6
+            self.state = PLAYTHROUGH_5
+
+    def playthrough_5(self, delta_time):
+        if self.player.center_x > 1350:
+            self.story_idx = 7
         pass
+
+    def playthrough_7(self, delta_time):
+        if self.player.center_x > 2700 and self.player.center_y > 2000:
+            print("HERE")
+            self.story_idx = 9
+            self.state = CUTSCENE_2
+        pass
+
+
+
+    
+    def animate_cutscene_2(self, delta_time):
+        self.player.change_x = 0
+        self.player.change_y = 0
+        self.second_player.change_x = 0
+        self.second_player.change_y = 0
+        self.cutscene_timer += delta_time 
+        self.can_control = False
+        self.player_list.append(self.second_player)
+        self.physics_engines.append(
+                        arcade.PhysicsEngineSimple(self.second_player, self.blockable_list,
+                                                                 )
+                                                    )
+        if self.second_player.center_x < self.player.left:
+            self.second_player.change_x = PLAYER_MOVEMENT_SPEED
+        elif self.second_player.center_x > self.player.left + self.player.width:
+            self.second_player.change_x = -PLAYER_MOVEMENT_SPEED
+        else:
+            self.second_player.change_x = 0
+
+        if self.second_player.center_y > self.player.bottom + self.player.height * 3:
+            self.second_player.change_y = -PLAYER_MOVEMENT_SPEED
+        else:
+            self.second_player.change_y = 0
+        if (self.cutscene_timer > 3):
+            self.story_idx = 10
+        if (self.cutscene_timer > 5):
+            self.story_idx = 11
+        if (self.cutscene_timer > 8):
+            self.story_idx = 12
+        if (self.cutscene_timer > 11):
+            self.story_idx = 13
+        if (self.cutscene_timer > 14):
+            self.story_idx = 14
+        if (self.cutscene_timer > 17):
+            self.story_idx = 15
+        if (self.cutscene_timer > 20):
+            self.story_idx = 16
+        if (self.cutscene_timer > 23):
+            self.story_idx = 17
+        if self.cutscene_timer > 27:
+            self.setup_2()
+    
     
 
 
+
     def on_update(self, delta_time):
+        print(self.player.center_x, self.player.center_y)
+        print(self.state)
 
         if (self.dashable_removed and self.player.dash_timer==0):
             self.dashable_removed = False
@@ -660,6 +777,12 @@ class MyGame(arcade.Window):
             self.playthrough_3(delta_time)
         elif (self.state == PLAYTHROUGH_4):
             self.playthrough_4(delta_time)
+        elif (self.state == PLAYTHROUGH_5):
+            self.playthrough_5(delta_time)
+        elif (self.state == PLAYTHROUGH_7):
+            self.playthrough_7(delta_time)
+        elif (self.state == CUTSCENE_2):
+            self.animate_cutscene_2(delta_time)
 
         # self.enemy.move()
 
@@ -671,7 +794,7 @@ class MyGame(arcade.Window):
                 if len(wall_hit_list) > 0 or len(enemy_hit_list) > 0:
                     bullet.remove_from_sprite_lists()
 
-                if len(enemy_hit_list) > 0:
+                for enemy in enemy_hit_list:
                     enemy.getDamaged(bullet.center_x, bullet.center_y)
 
                 if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
@@ -687,18 +810,19 @@ class MyGame(arcade.Window):
 
         
 
-        for bullet in self.enemy.bullet_list:
-            wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
-            enemy_hit_list = arcade.check_for_collision(bullet, self.player)
+        for enemy in self.enemy_list:
+            for bullet in enemy.bullet_list:
+                wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
+                enemy_hit_list = arcade.check_for_collision(bullet, self.player)
 
-            if len(wall_hit_list) > 0 or enemy_hit_list:
-                bullet.remove_from_sprite_lists()
+                if len(wall_hit_list) > 0 or enemy_hit_list:
+                    bullet.remove_from_sprite_lists()
 
-            if enemy_hit_list:
-                self.player.health -= 1
+                if enemy_hit_list:
+                    self.player.getDamaged(bullet.center_x, bullet.center_y)
 
-            if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
-                bullet.remove_from_sprite_lists()
+                if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
+                    bullet.remove_from_sprite_lists()
 
         for health in self.health_pickup_list:
             pickup = arcade.check_for_collision(health, self.player)
@@ -721,8 +845,10 @@ class MyGame(arcade.Window):
                 enemy.getDamaged(self.player.center_x, self.player.center_y)
         
 
+        """
         if(self.level_sound.is_complete()):
             arcade.play_sound(self.level_sound)
+        """
 
         for physics_engine in self.physics_engines:
             physics_engine.update()
@@ -731,7 +857,7 @@ class MyGame(arcade.Window):
         for enemy in self.enemy_list:
             enemy.update()
             enemy.update_animation()
-        print(self.player.center_x, self.player.center_y)
+        #print(self.player.center_x, self.player.center_y)
 
 
 
@@ -767,6 +893,7 @@ def main():
     """ Main method """
     window = MyGame()
     window.setup()
+    window.setup_2()
     arcade.run()
 
 
