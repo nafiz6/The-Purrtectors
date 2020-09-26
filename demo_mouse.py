@@ -7,7 +7,7 @@ from player import Player
 
 # Constants
 SCREEN_WIDTH = 1300
-SCREEN_HEIGHT = 800
+SCREEN_HEIGHT = 1000
 SCREEN_TITLE = "Outcast Cat"
 
 # Constants used to scale our sprites from their original size
@@ -35,6 +35,9 @@ LEFT_FACING=1
 
 CUTSCENE_1 = 1
 PLAYTHROUGH_1 = 2
+PLAYTHROUGH_2 = 3
+PLAYTHROUGH_3 = 4
+PLAYTHROUGH_4 = 5
 
 BLACK_BAR_HEIGHT = 100
 
@@ -125,6 +128,7 @@ class MyGame(arcade.Window):
 
         self.cutscene_timer = None
         self.player_idx = None
+        self.story_idx = None
 
         # --- Load in a map from the tiled editor ---
     def load_level(self,path_to_map,map_width,map_height,tile_width,tile_height,tile_scale):
@@ -197,7 +201,8 @@ class MyGame(arcade.Window):
         self.health_pickup_list = arcade.SpriteList()
 
         self.player_idx = 0
-    
+        self.story_idx = 0 
+
         self.load_level("./maps/level-1.tmx",50,50,16,16,TILE_SCALING)
 
         # Set up the player, specifically placing it at these coordinates.
@@ -304,23 +309,37 @@ class MyGame(arcade.Window):
 
         for i in range(self.player.health):
             self.health_sprite.left = self.view_left + 10 + i*(self.health_sprite.width + 10)
-            self.health_sprite.bottom = self.view_bottom + SCREEN_HEIGHT - self.health_sprite.height - 10 
+            self.health_sprite.bottom = self.view_bottom + SCREEN_HEIGHT - BLACK_BAR_HEIGHT - self.health_sprite.height - 10 
             self.health_sprite.draw()
         
         rect = arcade.create_rectangle_filled(self.view_left + SCREEN_WIDTH/2, 
                 self.view_bottom + BLACK_BAR_HEIGHT/2, SCREEN_WIDTH, BLACK_BAR_HEIGHT,
+                (0,0,0))
+        rect_top = arcade.create_rectangle_filled(self.view_left + SCREEN_WIDTH/2, 
+                self.view_bottom + SCREEN_HEIGHT - BLACK_BAR_HEIGHT/2, SCREEN_WIDTH, BLACK_BAR_HEIGHT,
                 (0,0,0))
         """
         rect = arcade.create_rectangle_filled(self.player.center_x, 
                 self.player.center_y, SCREEN_WIDTH, BLACK_BAR_HEIGHT,
                 (0,0,0))
         """
-        #rect.draw()
+        rect.draw()
+        rect_top.draw()
+
+        plot_text = ["The cats and the hoomans lived in harmony",
+                 "But one sudden evening, something stranged happened!",
+                 "Cat: I don't understand, why was I thrown out?",
+                 "Cat: I'm weak. I need to find something to heal", 
+                 "Cat: That's a lot better! I need to figure out what's going on.",
+                 "Cat: Maybe I can dash over that hole \n Press Shift to Dash",
+                 ""]
 
 
         # Draw our health on the screen, scrolling it with the viewport
-        health_text = f"health: {self.player.health} enemy: {self.enemy.health} stamina: {self.player.stamina}"
+        health_text = f"stamina: {self.player.stamina}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
+                         arcade.csscolor.WHITE, 27, bold = True)
+        arcade.draw_text(plot_text[self.story_idx], 10 + self.view_left, 40 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -477,7 +496,7 @@ class MyGame(arcade.Window):
             self.view_left = max(0,self.view_left)
             self.view_left = min(self.view_left,self.level_width-SCREEN_WIDTH)
 
-            self.view_bottom = max(-BLACK_BAR_HEIGHT,self.view_bottom)
+            self.view_bottom = max(0 ,self.view_bottom)
             self.view_bottom = min(self.view_bottom,self.level_height + BLACK_BAR_HEIGHT - SCREEN_HEIGHT)
 
             # Do the scrolling
@@ -488,15 +507,17 @@ class MyGame(arcade.Window):
 
 
     def animate_cutscene_1(self, delta_time):
-        if (self.cutscene_timer == 0):
+        self.cutscene_timer += delta_time 
+        if (self.cutscene_timer == delta_time):
             self.player.set_brightness(0)
             self.player.health = 2
             self.player.movement_speed = 1
 
 
-        self.cutscene_timer += delta_time 
-
         if (self.cutscene_timer > 5):
+            self.story_idx = 1
+
+        if (self.cutscene_timer > 7):
             brightness = self.player.color[0]
             brightness += 10
             if (brightness > 255):
@@ -506,7 +527,7 @@ class MyGame(arcade.Window):
             self.player.change_x  = -5
             self.player.change_y = 0
 
-        if self.cutscene_timer > 6:
+        if self.cutscene_timer > 8:
             self.player.change_angle = 0
             self.player.angle = 0
             self.player.change_y = 0
@@ -517,6 +538,33 @@ class MyGame(arcade.Window):
             self.state = PLAYTHROUGH_1
             self.setup_post_cut_scene()
             self.cutscene_timer = 0
+            self.story_idx = 2
+
+    def playthrough_1(self, delta_time):
+        self.cutscene_timer += delta_time
+        if self.cutscene_timer > 6:
+            self.story_idx = 3
+            self.state = PLAYTHROUGH_2
+            self.cutscene_timer = 0
+
+    def playthrough_2(self, delta_time):
+        if self.player.health == self.player.max_health:
+            self.story_idx = 4
+            self.state = PLAYTHROUGH_3
+        self.playthrough_3(delta_time)
+
+    def playthrough_3(self, delta_time):
+        if self.player.center_x > 794:
+            self.story_idx = 5
+            self.state = PLAYTHROUGH_4
+
+
+    def playthrough_4(self, delta_time):
+        if self.player.center_x > 1159:
+            self.story_idx = 6
+        pass
+    
+
 
     def on_update(self, delta_time):
 
@@ -525,21 +573,28 @@ class MyGame(arcade.Window):
         
             for sprite in self.dashable_list:
                 self.blockable_list.append(sprite)
+        print (self.player.center_x)
 
 
         self.update_scroll()
 
-        self.player.update_animation()
-
-        self.player.update()
-        self.second_player.update()
+        for player in self.player_list:
+            player.update_animation()
+            player.update()
+            player.bullet_list.update()
 
         if (self.state == CUTSCENE_1):
             self.animate_cutscene_1(delta_time)
+        elif (self.state == PLAYTHROUGH_1):
+            self.playthrough_1(delta_time)
+        elif (self.state == PLAYTHROUGH_2):
+            self.playthrough_2(delta_time)
+        elif (self.state == PLAYTHROUGH_3):
+            self.playthrough_3(delta_time)
+        elif (self.state == PLAYTHROUGH_4):
+            self.playthrough_4(delta_time)
 
-        self.player.bullet_list.update()
-        self.enemy.move()
-
+        
         for bullet in self.player.bullet_list:
             wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
             enemy_hit_list = arcade.check_for_collision(bullet, self.enemy.sprite)
