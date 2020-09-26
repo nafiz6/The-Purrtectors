@@ -222,7 +222,7 @@ class MyGame(arcade.Window):
         self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
 
         self.enemy = Enemy(self)
-        self.enemy.setup("./characters/cat", CHARACTER_SCALING, 900, 1200)
+        self.enemy.setup("./characters/cat", CHARACTER_SCALING, 1200, 300)
         self.enemy_list.append(self.enemy)
 
         for sprite in self.wall_list:
@@ -527,11 +527,11 @@ class MyGame(arcade.Window):
             if (brightness > 255):
                 brightness = 255
             self.player.set_brightness(brightness)
-            self.player.change_angle = 7
+            self.player.change_angle = 4.9
             self.player.change_x  = -5
             self.player.change_y = 0
 
-        if self.cutscene_timer > 8:
+        if self.cutscene_timer > 8.2:
             self.player.change_angle = 0
             self.player.angle = 0
             self.player.change_y = 0
@@ -577,7 +577,7 @@ class MyGame(arcade.Window):
         
             for sprite in self.dashable_list:
                 self.blockable_list.append(sprite)
-        print (self.player.center_x)
+        #print (self.player.center_x)
 
 
         self.update_scroll()
@@ -657,10 +657,11 @@ class MyGame(arcade.Window):
         for physics_engine in self.physics_engines:
             physics_engine.update()
         self.enemy_physics_engine.update()
+        self.enemy.update()
 
         
-        print(self.enemy.path)
-        print(self.player.center_x,self.player.center_y)
+        #print(self.enemy.path)
+        #print(self.player.center_x,self.player.center_y)
 
 
 

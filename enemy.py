@@ -124,8 +124,8 @@ class Enemy(arcade.Sprite):
         self.init_x = self.center_x
         self.init_y = self.center_y
 
-        self.range_x = (max(self.init_x-1000,0),min(self.init_x+1000,self.window.level_width))
-        self.range_y = (max(self.init_y-1000,0),min(self.init_y+1000,self.window.level_height))
+        self.range_x = (max(self.init_x-500,0),min(self.init_x+500,self.window.level_width))
+        self.range_y = (max(self.init_y-500,0),min(self.init_y+500,self.window.level_height))
         
         self.barrier_list = arcade.AStarBarrierList(self.window.player,
                                                     self.window.blockable_list,
@@ -221,7 +221,7 @@ class Enemy(arcade.Sprite):
             new_follow = 'init'
 
         if(new_follow==self.follow and self.path!=None and self.path_idx<len(self.path)
-            and self.frame_counter<60):
+            and self.frame_counter<600):
             if((self.path!=None and len(self.path)>0) 
             and ((dest==self.window.player.position and len(self.path)<60) 
             or dest==(self.init_x,self.init_y))):
@@ -236,7 +236,7 @@ class Enemy(arcade.Sprite):
                                                 diagonal_movement=True)
 
         self.frame_counter+=1
-        print(self.frame_counter)
+        #print(self.frame_counter)
 
         # if((self.path!=None and len(self.path)>0) 
         # and ((dest==self.window.player.position and len(self.path)<20) 
