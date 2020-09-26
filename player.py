@@ -115,7 +115,7 @@ class Player(arcade.Sprite):
 
         self.animation_timer = 0
 
-        self.melee_sprite = [arcade.Sprite(f'{img_src}-melee-0.png'), arcade.Sprite(f'{img_src}-melee-1.png'), arcade.Sprite(f'{img_src}-melee-0.png') ]
+        self.melee_sprite = [arcade.Sprite(f'{img_src}-melee-0.png' , 1.5), arcade.Sprite(f'{img_src}-melee-1.png', 1.5), arcade.Sprite(f'{img_src}-melee-0.png', 1.5) ]
         self.melee_attacking = False 
         self.melee_idx = 0
         self.melee_list = arcade.SpriteList()

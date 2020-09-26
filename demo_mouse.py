@@ -42,6 +42,10 @@ PLAYTHROUGH_4 = 5
 
 BLACK_BAR_HEIGHT = 100
 
+RANGE = 1
+MELEE = 2
+BOSS = 3
+
 
 
 
@@ -222,7 +226,7 @@ class MyGame(arcade.Window):
         self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
 
         self.enemy = Enemy(self)
-        self.enemy.setup("./characters/cat", CHARACTER_SCALING, 1200, 300)
+        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 1200, 300, RANGE)
         self.enemy_list.append(self.enemy)
 
         for sprite in self.wall_list:
@@ -603,7 +607,7 @@ class MyGame(arcade.Window):
 
         for bullet in self.player.bullet_list:
             wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
-            enemy_hit_list = arcade.check_for_collision(bullet, self.enemy.sprite)
+            enemy_hit_list = arcade.check_for_collision(bullet, self.enemy)
 
             if len(wall_hit_list) > 0 or enemy_hit_list:
                 bullet.remove_from_sprite_lists()
@@ -658,6 +662,7 @@ class MyGame(arcade.Window):
             physics_engine.update()
         self.enemy_physics_engine.update()
         self.enemy.update()
+        self.enemy.update_animation()
 
         
         #print(self.enemy.path)
