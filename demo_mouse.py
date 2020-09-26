@@ -310,6 +310,10 @@ class MyGame(arcade.Window):
         self.props_list.draw()
         self.health_pickup_list.draw()
 
+        self.player.hud_sprite.left = self.view_left
+        self.player.hud_sprite.bottom = self.view_bottom + BLACK_BAR_HEIGHT
+        self.player.hud_sprite.draw()
+
         for player in self.player_list:
             player.bullet_list.draw()
             if (player.explosion_happening):

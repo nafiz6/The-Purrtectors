@@ -61,6 +61,8 @@ class Player(arcade.Sprite):
         self.rem_bullets = None
         self.bullet_regen_timer = None
 
+        self.hud_sprite = None
+
     def setup(self, img_src, scale, start_x, start_y, cat_type):
 
         self.dead = False
@@ -105,7 +107,8 @@ class Player(arcade.Sprite):
         for i in range(4):
             down_still.append(arcade.load_texture(f'{img_src}-stand-down-{i}.png'))
             down_walk.append(arcade.load_texture(f'{img_src}-walk-down-{i}.png'))
-
+        
+        self.hud_sprite = arcade.Sprite(f'./effects/cat-{cat_type}-controls.png', 0.5)
 
         self.still_textures['LEFT'] = left_still
         self.still_textures['RIGHT'] = right_still
