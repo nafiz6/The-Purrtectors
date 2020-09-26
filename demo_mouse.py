@@ -28,7 +28,7 @@ PLAYER_JUMP_SPEED = 20
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
 LEFT_VIEWPORT_MARGIN = 350
-RIGHT_VIEWPORT_MARGIN = 350
+RIGHT_VIEWPORT_MARGIN = 520
 BOTTOM_VIEWPORT_MARGIN = 250
 TOP_VIEWPORT_MARGIN = 250
 
@@ -43,9 +43,10 @@ PLAYTHROUGH_4 = 5
 
 BLACK_BAR_HEIGHT = 100
 
-RANGE = 1
-MELEE = 2
-BOSS = 3
+TURRET = 1
+RANGE = 2
+MELEE = 3
+BOSS = 4
 
 
 
@@ -184,6 +185,7 @@ class MyGame(arcade.Window):
         # Set the background color
         if my_map.background_color:
             arcade.set_background_color(my_map.background_color)
+        self.help_text = None
 
     def setup(self):
         """ Set up the game here. Call this function to restart the game. """
@@ -191,6 +193,8 @@ class MyGame(arcade.Window):
         # Used to keep track of our scrolling
         self.view_bottom = 0
         self.view_left = 0
+
+        self.help_text = ""
 
         
         self.state = CUTSCENE_1
@@ -205,7 +209,6 @@ class MyGame(arcade.Window):
         self.enemy_list = arcade.SpriteList()
         self.floor_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
-        self.bullet_list = arcade.SpriteList()
         self.dashable_list = arcade.SpriteList()
         self.blockable_list = arcade.SpriteList()
         self.health_pickup_list = arcade.SpriteList()
@@ -233,9 +236,30 @@ class MyGame(arcade.Window):
     
 
         self.enemy = Turret(self)
-        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 1200, 300, RANGE)
+        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2000, 300, TURRET)
         self.enemy_list.append(self.enemy)
 
+        self.enemy_2 = Enemy(self)
+        self.enemy_2.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 3000, 300, MELEE)
+        self.enemy_list.append(self.enemy_2)
+
+
+        self.enemy_3 = Enemy(self)
+        self.enemy_3.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2500, 1500, MELEE)
+        self.enemy_list.append(self.enemy_3)
+
+
+        self.enemy_3 = Enemy(self)
+        self.enemy_3.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 3000, 1560, MELEE)
+        self.enemy_list.append(self.enemy_3)
+
+        self.enemy_4 = Turret(self)
+        self.enemy_4.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2800, 1660, TURRET)
+        self.enemy_list.append(self.enemy_4)
+        
+        self.boss = Turret(self)
+        self.boss.setup("./characters/enemies/Boss (maybe)/png/boss", CHARACTER_SCALING, 2800, 2500, BOSS)
+        self.enemy_list.append(self.boss)
         for sprite in self.wall_list:
             self.blockable_list.append(sprite)
         for sprite in self.dashable_list:
@@ -279,14 +303,17 @@ class MyGame(arcade.Window):
                                                              self.blockable_list,
                                                              )
 
-        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy,
-                                                             self.blockable_list,
-                                                             )
+        for enemy in self.enemy_list:
+            self.physics_engines.append(
+                                arcade.PhysicsEngineSimple(enemy,
+                                     self.blockable_list,
+                                             ))
         """
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                             self.enemy_list
                                                              )
         """
+        self.enemy.barrier_list.recalculate()
 
 
     def setup_post_cut_scene(self):
@@ -294,7 +321,6 @@ class MyGame(arcade.Window):
                                                              self.blockable_list
                                                              )
                                            
-        self.enemy.barrier_list.recalculate()
 
     def on_draw(self):
         """ Render the screen. """
@@ -302,14 +328,29 @@ class MyGame(arcade.Window):
 
         # Draw our sprites
         self.floor_list.draw()
-        self.player.bullet_list.draw()
         self.dashable_list.draw()
         self.wall_list.draw()
         self.player_list.draw()
         self.enemy_list.draw()
         self.props_list.draw()
         self.health_pickup_list.draw()
-        self.enemy.bullet_list.draw()
+
+        for enemy in self.enemy_list:
+            enemy.bullet_list.draw()
+
+        self.player.hud_sprite.left = self.view_left
+        self.player.hud_sprite.bottom = self.view_bottom + BLACK_BAR_HEIGHT
+        self.player.hud_sprite.draw()
+
+        for player in self.player_list:
+            player.bullet_list.draw()
+            if (player.explosion_happening):
+                player.explosion_index += .5
+                if player.explosion_index >= len(player.explosion_sprites):
+                    player.explosion_happening = False
+                    player.explosion_index = 0
+                else:
+                    player.explosion_sprites[int(player.explosion_index)].draw()
 
 
 
@@ -351,7 +392,7 @@ class MyGame(arcade.Window):
 
 
         # Draw our health on the screen, scrolling it with the viewport
-        health_text = f"stamina: {self.player.stamina}"
+        health_text = f"{self.help_text} {self.enemy.health}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
         arcade.draw_text(plot_text[self.story_idx], 10 + self.view_left, 40 + self.view_bottom,
@@ -360,19 +401,23 @@ class MyGame(arcade.Window):
         if(self.enemy.path!=None):
             arcade.draw_line_strip(self.enemy.path, arcade.color.BLACK, 2)
 
+
+
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.can_control:
             return
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.player.melee()
         elif button == arcade.MOUSE_BUTTON_LEFT:
-            if self.player.type == 1:
+            if self.player.type == 1 or self.player.type == 4:
                 self.player.range(x, y, self.view_left, self.view_bottom)
             elif self.player.type == 2:
                 if (self.player.projectile_state):
                     self.player.range(x, y, self.view_left, self.view_bottom)
                 else:
                     self.player.heal(x + self.view_left, y + self.view_bottom, self.player_list)
+            elif self.player.type == 3:
+                self.help_text = self.player.sneak_kill(x + self.view_left, y + self.view_bottom, self.enemy_list)
 
     def on_mouse_motion(self, x, y, dx, dy):
         #position of mouse relative to palyer
@@ -388,7 +433,7 @@ class MyGame(arcade.Window):
             self.player.change_y=0
 
     def on_key_press(self, key, modifiers):
-        if not self.can_control:
+        if not self.can_control or (self.player.dead and key!=32):
             return
         """Called whenever a key is pressed. """
 
@@ -528,7 +573,7 @@ class MyGame(arcade.Window):
         self.cutscene_timer += delta_time 
         if (self.cutscene_timer == delta_time):
             self.player.set_brightness(0)
-            self.player.health = 2
+            self.player.health = 5
             self.player.movement_speed = 1
 
 
@@ -536,6 +581,7 @@ class MyGame(arcade.Window):
             self.story_idx = 1
 
         if (self.cutscene_timer > 7):
+            self.player.health = 2
             brightness = self.player.color[0]
             brightness += 10
             if (brightness > 255):
@@ -595,7 +641,8 @@ class MyGame(arcade.Window):
 
 
         self.update_scroll()
-        self.enemy.bullet_list.update()
+        for enemy in self.enemy_list:
+            enemy.bullet_list.update()
 
         for player in self.player_list:
             player.update_animation()
@@ -616,18 +663,29 @@ class MyGame(arcade.Window):
 
         # self.enemy.move()
 
-        for bullet in self.player.bullet_list:
-            wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
-            enemy_hit_list = arcade.check_for_collision(bullet, self.enemy)
+        for player in self.player_list:
+            for bullet in player.bullet_list:
+                wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
+                enemy_hit_list = arcade.check_for_collision_with_list(bullet, self.enemy_list)
 
-            if len(wall_hit_list) > 0 or enemy_hit_list:
-                bullet.remove_from_sprite_lists()
+                if len(wall_hit_list) > 0 or len(enemy_hit_list) > 0:
+                    bullet.remove_from_sprite_lists()
 
-            if enemy_hit_list:
-                self.enemy.health -= 1
+                if len(enemy_hit_list) > 0:
+                    enemy.getDamaged(bullet.center_x, bullet.center_y)
 
-            if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
-                bullet.remove_from_sprite_lists()
+                if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
+                    bullet.remove_from_sprite_lists()
+
+            if player.explosion_happening:
+                enemy_hit_list = arcade.check_for_collision_with_list(player.explosion_sprites[int(player.explosion_index)],
+                                                                self.enemy_list)
+                for enemy in enemy_hit_list:
+                    enemy.getDamaged(player.explosion_sprites[int(player.explosion_index)].center_x,
+                            player.explosion_sprites[int(player.explosion_index)].center_y)
+
+
+        
 
         for bullet in self.enemy.bullet_list:
             wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
@@ -650,34 +708,17 @@ class MyGame(arcade.Window):
 
         hit_list = arcade.check_for_collision_with_list(self.player, self.enemy_list)
         for enemy in hit_list:
+            if enemy.path_traversal_state == 'ATTACK':
+                self.player.getDamaged(enemy.center_x, enemy.center_y)
+                enemy.deagro()
 
-            self.player.health-=1
-
-            if enemy.bottom > self.player.bottom:
-                self.player.bottom -= 100
-            elif enemy.bottom < self.player.bottom:
-                self.player.bottom += 100
-
-            if enemy.left > self.player.left:
-                self.player.left -= 100
-            elif enemy.left < self.player.left:
-                self.player.left += 100
 
         
         if self.player.melee_attacking:
             hit_list = arcade.check_for_collision_with_list(self.player.melee_sprite[self.player.melee_idx], self.enemy_list)
 
             for enemy in hit_list:
-                self.enemy.health -= 1
-                if enemy.bottom > self.player.bottom:
-                    enemy.bottom += 100
-                elif enemy.bottom < self.player.bottom:
-                    enemy.bottom -= 100
-
-                if enemy.left > self.player.left:
-                    enemy.left += 100
-                elif enemy.left < self.player.left:
-                    enemy.left -= 100
+                enemy.getDamaged(self.player.center_x, self.player.center_y)
         
 
         if(self.level_sound.is_complete()):
@@ -685,9 +726,14 @@ class MyGame(arcade.Window):
 
         for physics_engine in self.physics_engines:
             physics_engine.update()
-        self.enemy_physics_engine.update()
-        self.enemy.update()
-        self.enemy.update_animation()
+        #self.enemy_physics_engine.update()
+        
+        for enemy in self.enemy_list:
+            enemy.update()
+            enemy.update_animation()
+        print(self.player.center_x, self.player.center_y)
+
+
 
         
         #print(self.enemy.path)

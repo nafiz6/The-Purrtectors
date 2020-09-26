@@ -3,6 +3,9 @@ import math
 
 BULLET_SPEED = 15
 
+SCREEN_WIDTH = 1300
+SCREEN_HEIGHT = 1000
+
 TURRET = 1
 RANGE = 2
 MELEE = 3
@@ -11,8 +14,8 @@ BOSS = 4
 def magnitude(x, y):
     return math.sqrt(x*x + y*y)
 
-DASH_AMOUNT = 200
-ENEMY_SPEED = 5
+DASH_AMOUNT = 100
+ENEMY_SPEED = 3
 
 class Enemy(arcade.Sprite):
     def __init__(self,window):
@@ -40,6 +43,7 @@ class Enemy(arcade.Sprite):
         self.animation_timer = None
         self.melee_sprite = None
 
+
         self.melee_timer = None
         self.melee_attacking = None
         self.melee_idx = None
@@ -54,6 +58,7 @@ class Enemy(arcade.Sprite):
         self.frame_counter = 0
 
         self.enemy_type = 0
+        self.dead = None
 
     def setup(self, img_src, scale, start_x, start_y, enemy_type):
 
@@ -69,6 +74,7 @@ class Enemy(arcade.Sprite):
 
         sprite_sheet = img_src
 
+        self.dead = False
         self.scale = scale
         self.bullet_list = arcade.SpriteList()
 
@@ -84,22 +90,46 @@ class Enemy(arcade.Sprite):
 
         self.enemy_type = enemy_type
 
+        if enemy_type != BOSS:
 
-        for i in range(1,5):
-            left_still.append(arcade.load_texture(f'{img_src}-left-1.png'))
-            left_walk.append(arcade.load_texture(f'{img_src}-left-{i}.png'))
-        
-        for i in range(1,5):
-            right_still.append(arcade.load_texture(f'{img_src}-right-1.png'))
-            right_walk.append(arcade.load_texture(f'{img_src}-right-{i}.png'))
+            for i in range(1,5):
+                left_still.append(arcade.load_texture(f'{img_src}-left-1.png'))
+                left_walk.append(arcade.load_texture(f'{img_src}-left-{i}.png'))
+            
+            for i in range(1,5):
+                right_still.append(arcade.load_texture(f'{img_src}-right-1.png'))
+                right_walk.append(arcade.load_texture(f'{img_src}-right-{i}.png'))
 
-        for i in range(1,5):
-            up_still.append(arcade.load_texture(f'{img_src}-back-1.png'))
-            up_walk.append(arcade.load_texture(f'{img_src}-back-{i}.png'))
+            for i in range(1,5):
+                up_still.append(arcade.load_texture(f'{img_src}-back-1.png'))
+                up_walk.append(arcade.load_texture(f'{img_src}-back-{i}.png'))
 
-        for i in range(1,5):
-            down_still.append(arcade.load_texture(f'{img_src}-front-{i}.png'))
-            down_walk.append(arcade.load_texture(f'{img_src}-front-{i}.png'))
+            for i in range(1,5):
+                down_still.append(arcade.load_texture(f'{img_src}-front-{i}.png'))
+                down_walk.append(arcade.load_texture(f'{img_src}-front-{i}.png'))
+
+        else:
+            for i in range(1,5):
+                left_still.append(arcade.load_texture(f'{img_src}-right-{i}.png', flipped_horizontally = True))
+                left_walk.append(arcade.load_texture(f'{img_src}-right-run-{i}.png', flipped_horizontally = True))
+            
+            for i in range(1,5):
+                right_still.append(arcade.load_texture(f'{img_src}-right-{i}.png'))
+                right_walk.append(arcade.load_texture(f'{img_src}-right-run-{i}.png'))
+
+            for i in range(1,5):
+                up_still.append(arcade.load_texture(f'{img_src}-right-{i}.png'))
+                up_walk.append(arcade.load_texture(f'{img_src}-right-run-{i}.png'))
+
+            for i in range(1,5):
+                down_still.append(arcade.load_texture(f'{img_src}-right-{i}.png'))
+                down_walk.append(arcade.load_texture(f'{img_src}-right-run-{i}.png'))
+            self.scale = 0.5
+
+        if enemy_type == MELEE:
+            self.scale = 2
+
+
 
 
 
@@ -122,6 +152,8 @@ class Enemy(arcade.Sprite):
 
 
         self.health = 5
+        if (enemy_type == TURRET):
+            self.health = 2
 
 
         self.grid_size = 40
@@ -147,7 +179,9 @@ class Enemy(arcade.Sprite):
         self.path=None
         self.path_traversal_state = 'ATTACK'    
         self.path_traversal_state_counter = 0    
-        self.shoot_sound = arcade.load_sound('sounds/effects/laser2.ogg')
+
+        self.melee_attacking_sound = arcade.load_sound('sounds/effects/knifeSlice.ogg')
+        self.shooting_sound = arcade.load_sound('sounds/effects/laser2.ogg')
 
     def health_pickup(self):
         self.health = 5
@@ -156,8 +190,8 @@ class Enemy(arcade.Sprite):
     def set_brightness(self, brightness):
         self.color = [brightness, brightness, brightness]
 
-    def dash(self):
-        if self.stamina > 0:
+    def dash(self, x = 0, y = 0):
+        if self.stamina > 0 or x != 0 or y != 0:
             self.stamina_timer = 100
 
             relative_x = self.direction_x
@@ -166,6 +200,10 @@ class Enemy(arcade.Sprite):
             if relative_y==0 and relative_x==0:
                 relative_x=1
            
+            if x != 0 or y!= 0:
+                relative_x = x
+                relative_y = y
+
             relative_magnitude =  magnitude(relative_x, relative_y)
 
             relative_x /= relative_magnitude
@@ -173,15 +211,15 @@ class Enemy(arcade.Sprite):
 
             self.stamina -= 1
 
-            self.dash_timer = 10
+            self.dash_timer = 5
             if relative_x < 0:
-                self.change_x -= 20
+                self.change_x -= 9
             elif relative_x > 0:
-                self.change_x += 20
+                self.change_x += 9
             if relative_y < 0:
-                self.change_y -= 20
+                self.change_y -= 9
             elif relative_y > 0:
-                self.change_y += 20
+                self.change_y += 9
 
             
             return (self.center_x + DASH_AMOUNT*relative_x, self.center_y + DASH_AMOUNT*relative_y)
@@ -208,10 +246,14 @@ class Enemy(arcade.Sprite):
         new_follow=None
 
         if(self.path_traversal_state=='ATTACK' and 
+        ((
         self.window.player.center_x<self.range_x[1] 
         and self.window.player.center_x>self.range_x[0]
         and self.window.player.center_y<self.range_y[1]
-        and self.window.player.center_y>self.range_y[0]):
+        and self.window.player.center_y>self.range_y[0]
+        ) or (self.center_x > self.window.view_left and self.center_x < self.window.view_left + SCREEN_WIDTH
+            and self.center_y > self.window.view_bottom and self.center_y < self.window.view_bottom + SCREEN_HEIGHT))
+        and self.window.player.visibility):
             dest = self.window.player.position
             new_follow = 'player'
         else:
@@ -219,17 +261,11 @@ class Enemy(arcade.Sprite):
             new_follow = 'init'
 
         if(new_follow==self.follow and self.path!=None and self.path_idx<len(self.path)
-            and self.frame_counter<600):
+            and self.frame_counter<60):
             if((self.path!=None and len(self.path)>0) 
             and ((dest==self.window.player.position and len(self.path)<60) 
             or dest==(self.init_x,self.init_y))):
                 self.traverse_path()
-                if(self.collides_with_sprite(self.window.player)):
-                    # self.on_counter=0
-                    self.change_x=0
-                    self.change_y=0
-                    self.path_traversal_state='RETURN'
-                    self.path_traversal_state_counter=0  
         else:
             self.path_idx=1
             self.frame_counter=0
@@ -245,7 +281,6 @@ class Enemy(arcade.Sprite):
             self.path_traversal_state_counter=0
             self.path_traversal_state='ATTACK'
         
-# self.on_counter+=1
         #print(self.frame_counter)
 
         # if((self.path!=None and len(self.path)>0) 
@@ -263,6 +298,40 @@ class Enemy(arcade.Sprite):
         #     self.change_x=0
         #     self.change_y=0
         
+    def deagro(self):
+
+        self.change_x=0
+        self.change_y=0
+        self.path_traversal_state='RETURN'
+        self.path_traversal_state_counter=0  
+
+
+    def getDamaged(self, from_x, from_y):
+        if self.dead:
+            return
+        x = 0
+        y = 0
+        if from_x > self.center_x:
+            x -= 1
+        else:
+            x += 1
+        if from_y > self.center_y:
+            y -= 1
+        else: 
+            y += 1
+
+        self.dash(x, y)
+        self.health -= 1
+        if self.health <= 0:
+            self.dead = True
+            self.facing_dir = 'RIGHT'
+            self.angle = 45
+            self.change_x = 0
+            self.change_y = 0
+            self.remove_from_sprite_lists()
+
+
+
     def range(self, x , y, view_left, view_bottom):
 
         #create bullet
@@ -283,13 +352,13 @@ class Enemy(arcade.Sprite):
         bullet.change_y = math.sin(angle) * BULLET_SPEED
 
         self.bullet_list.append(bullet)
+
+        arcade.play_sound(self.shooting_sound)
         
         # #stop player motion
         # self.right_click = False
         # self.change_x=0
         # self.change_y=0
-        print('shooting')
-        arcade.play_sound(self.shoot_sound)
         
     def update_animation(self,delta_time = 1/60):
         if (self.dash_timer>0):
@@ -330,6 +399,7 @@ class Enemy(arcade.Sprite):
 class Turret(Enemy):
     def __init__(self,window):
         super().__init__(window)
+        self.health = 2
 
     # def shoot(self,x,y):
     #     None
