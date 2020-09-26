@@ -34,6 +34,7 @@ class Player(arcade.Sprite):
 
         self.animation_timer = None
         self.melee_sprite = None
+        self.melee_sprite_2 = None
 
         self.melee_timer = None
         self.melee_attacking = None
@@ -126,7 +127,8 @@ class Player(arcade.Sprite):
 
         self.animation_timer = 0
 
-        self.melee_sprite = [arcade.Sprite(f'{img_src}-melee-0.png' , 1.5), arcade.Sprite(f'{img_src}-melee-1.png', 1.5), arcade.Sprite(f'{img_src}-melee-0.png', 1.5) ]
+        self.melee_sprite = [arcade.Sprite(f'{img_src}-melee-0.png' , 2), arcade.Sprite(f'{img_src}-melee-1.png', 2), arcade.Sprite(f'{img_src}-melee-0.png', 2) ]
+        self.melee_sprite_2 = [arcade.Sprite(f'{img_src}-melee-0.png' , 2), arcade.Sprite(f'{img_src}-melee-1.png', 2), arcade.Sprite(f'{img_src}-melee-0.png', 2) ]
         self.melee_attacking = False 
         self.melee_idx = 0
         self.melee_list = arcade.SpriteList()
@@ -210,7 +212,7 @@ class Player(arcade.Sprite):
     def dash(self, x=0, y=0):
         if self.dead:
             return
-        if self.stamina > 0:
+        if self.stamina > 0 or (x!=0 and y!=0):
             self.stamina_timer = 100
 
             relative_x = self.direction_x
@@ -292,17 +294,23 @@ class Player(arcade.Sprite):
         self.melee_list = arcade.SpriteList()
         self.melee_sprite[self.melee_idx].center_x = self.center_x
         self.melee_sprite[self.melee_idx].center_y = self.center_y
+        self.melee_sprite_2[self.melee_idx].center_x = self.center_x
+        self.melee_sprite_2[self.melee_idx].center_y = self.center_y
 
         if self.facing_dir == 'RIGHT':
             self.melee_sprite[self.melee_idx].center_x += self.width/2
+            self.melee_sprite_2[self.melee_idx].center_x += self.width/2 + 10
             self.melee_sprite[self.melee_idx].angle = 0
+            self.melee_sprite_2[self.melee_idx].angle = 0
             if (self.melee_idx == 0 or self.melee_idx == 2):
                 self.angle = 15
             else:
                 self.angle = 30
         elif self.facing_dir == 'LEFT':
             self.melee_sprite[self.melee_idx].center_x -= self.width/2
+            self.melee_sprite_2[self.melee_idx].center_x -= self.width/2 + 10
             self.melee_sprite[self.melee_idx].angle = 180
+            self.melee_sprite_2[self.melee_idx].angle = 180
             
             if (self.melee_idx == 0 or self.melee_idx == 2):
                 self.angle = -15
@@ -310,14 +318,20 @@ class Player(arcade.Sprite):
                 self.angle = -30
         elif self.facing_dir == 'DOWN':
             self.melee_sprite[self.melee_idx].center_y -= self.height/2
+            self.melee_sprite_2[self.melee_idx].center_y -= self.height/2 + 10
             self.melee_sprite[self.melee_idx].angle = -90
+            self.melee_sprite_2[self.melee_idx].angle = -90
             
         elif self.facing_dir == 'UP':
             self.melee_sprite[self.melee_idx].center_y += self.height/2
+            self.melee_sprite_2[self.melee_idx].center_y += self.height/2 + 10
             self.melee_sprite[self.melee_idx].angle = 90
+            self.melee_sprite_2[self.melee_idx].angle = 90
+        
         
         
         self.melee_list.append(self.melee_sprite[self.melee_idx])
+        self.melee_list.append(self.melee_sprite_2[self.melee_idx])
         
 
 

@@ -28,7 +28,7 @@ PLAYER_JUMP_SPEED = 20
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
 LEFT_VIEWPORT_MARGIN = 350
-RIGHT_VIEWPORT_MARGIN = 350
+RIGHT_VIEWPORT_MARGIN = 520
 BOTTOM_VIEWPORT_MARGIN = 250
 TOP_VIEWPORT_MARGIN = 250
 
@@ -43,9 +43,10 @@ PLAYTHROUGH_4 = 5
 
 BLACK_BAR_HEIGHT = 100
 
-RANGE = 1
-MELEE = 2
-BOSS = 3
+TURRET = 1
+RANGE = 2
+MELEE = 3
+BOSS = 4
 
 
 
@@ -235,9 +236,30 @@ class MyGame(arcade.Window):
     
 
         self.enemy = Turret(self)
-        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 1200, 300, RANGE)
+        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2000, 300, TURRET)
         self.enemy_list.append(self.enemy)
 
+        self.enemy_2 = Enemy(self)
+        self.enemy_2.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 3000, 300, MELEE)
+        self.enemy_list.append(self.enemy_2)
+
+
+        self.enemy_3 = Enemy(self)
+        self.enemy_3.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2500, 1500, MELEE)
+        self.enemy_list.append(self.enemy_3)
+
+
+        self.enemy_3 = Enemy(self)
+        self.enemy_3.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 3000, 1560, MELEE)
+        self.enemy_list.append(self.enemy_3)
+
+        self.enemy_4 = Turret(self)
+        self.enemy_4.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2800, 1660, TURRET)
+        self.enemy_list.append(self.enemy_4)
+        
+        self.boss = Turret(self)
+        self.boss.setup("./characters/enemies/Boss (maybe)/png/boss", CHARACTER_SCALING, 2800, 2500, BOSS)
+        self.enemy_list.append(self.boss)
         for sprite in self.wall_list:
             self.blockable_list.append(sprite)
         for sprite in self.dashable_list:
@@ -281,14 +303,17 @@ class MyGame(arcade.Window):
                                                              self.blockable_list,
                                                              )
 
-        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy,
-                                                             self.blockable_list,
-                                                             )
+        for enemy in self.enemy_list:
+            self.physics_engines.append(
+                                arcade.PhysicsEngineSimple(enemy,
+                                     self.blockable_list,
+                                             ))
         """
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                             self.enemy_list
                                                              )
         """
+        self.enemy.barrier_list.recalculate()
 
 
     def setup_post_cut_scene(self):
@@ -296,7 +321,6 @@ class MyGame(arcade.Window):
                                                              self.blockable_list
                                                              )
                                            
-        self.enemy.barrier_list.recalculate()
 
     def on_draw(self):
         """ Render the screen. """
@@ -310,7 +334,9 @@ class MyGame(arcade.Window):
         self.enemy_list.draw()
         self.props_list.draw()
         self.health_pickup_list.draw()
-        self.enemy.bullet_list.draw()
+
+        for enemy in self.enemy_list:
+            enemy.bullet_list.draw()
 
         self.player.hud_sprite.left = self.view_left
         self.player.hud_sprite.bottom = self.view_bottom + BLACK_BAR_HEIGHT
@@ -615,7 +641,8 @@ class MyGame(arcade.Window):
 
 
         self.update_scroll()
-        self.enemy.bullet_list.update()
+        for enemy in self.enemy_list:
+            enemy.bullet_list.update()
 
         for player in self.player_list:
             player.update_animation()
@@ -639,13 +666,13 @@ class MyGame(arcade.Window):
         for player in self.player_list:
             for bullet in player.bullet_list:
                 wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
-                enemy_hit_list = arcade.check_for_collision(bullet, self.enemy)
+                enemy_hit_list = arcade.check_for_collision_with_list(bullet, self.enemy_list)
 
-                if len(wall_hit_list) > 0 or enemy_hit_list:
+                if len(wall_hit_list) > 0 or len(enemy_hit_list) > 0:
                     bullet.remove_from_sprite_lists()
 
-                if enemy_hit_list:
-                    self.enemy.health -= 1
+                if len(enemy_hit_list) > 0:
+                    enemy.getDamaged(bullet.center_x, bullet.center_y)
 
                 if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
                     bullet.remove_from_sprite_lists()
@@ -654,7 +681,8 @@ class MyGame(arcade.Window):
                 enemy_hit_list = arcade.check_for_collision_with_list(player.explosion_sprites[int(player.explosion_index)],
                                                                 self.enemy_list)
                 for enemy in enemy_hit_list:
-                    enemy.health -= 1
+                    enemy.getDamaged(player.explosion_sprites[int(player.explosion_index)].center_x,
+                            player.explosion_sprites[int(player.explosion_index)].center_y)
 
 
         
@@ -677,25 +705,19 @@ class MyGame(arcade.Window):
             hit_list = arcade.check_for_collision_with_list(self.player.melee_sprite[self.player.melee_idx], self.enemy_list)
 
             for enemy in hit_list:
-                self.enemy.health -= 1
-                if enemy.bottom > self.player.bottom:
-                    enemy.bottom += 100
-                elif enemy.bottom < self.player.bottom:
-                    enemy.bottom -= 100
-
-                if enemy.left > self.player.left:
-                    enemy.left += 100
-                elif enemy.left < self.player.left:
-                    enemy.left -= 100
+                enemy.getDamaged(self.player.center_x, self.player.center_y)
         
 
 
 
         for physics_engine in self.physics_engines:
             physics_engine.update()
-        self.enemy_physics_engine.update()
-        self.enemy.update()
-        self.enemy.update_animation()
+        #self.enemy_physics_engine.update()
+        
+        for enemy in self.enemy_list:
+            enemy.update()
+            enemy.update_animation()
+        print(self.player.center_x, self.player.center_y)
 
 
 
