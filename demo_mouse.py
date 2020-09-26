@@ -200,7 +200,6 @@ class MyGame(arcade.Window):
         self.enemy_list = arcade.SpriteList()
         self.floor_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
-        self.bullet_list = arcade.SpriteList()
         self.dashable_list = arcade.SpriteList()
         self.blockable_list = arcade.SpriteList()
         self.health_pickup_list = arcade.SpriteList()
@@ -295,13 +294,24 @@ class MyGame(arcade.Window):
 
         # Draw our sprites
         self.floor_list.draw()
-        self.player.bullet_list.draw()
         self.dashable_list.draw()
         self.wall_list.draw()
         self.player_list.draw()
         self.enemy_list.draw()
         self.props_list.draw()
         self.health_pickup_list.draw()
+
+        for player in self.player_list:
+            player.bullet_list.draw()
+            if (player.explosion_happening):
+                player.explosion_index += .5
+                if player.explosion_index >= len(player.explosion_sprites):
+                    player.explosion_happening = False
+                    player.explosion_index = 0
+                else:
+                    player.explosion_sprites[int(player.explosion_index)].draw()
+
+
 
         if self.player.melee_attacking:
             self.player.melee_list.draw()
@@ -341,7 +351,7 @@ class MyGame(arcade.Window):
 
 
         # Draw our health on the screen, scrolling it with the viewport
-        health_text = f"stamina: {self.player.stamina}"
+        health_text = f"stamina: {self.enemy.health}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
         arcade.draw_text(plot_text[self.story_idx], 10 + self.view_left, 40 + self.view_bottom,
@@ -350,13 +360,15 @@ class MyGame(arcade.Window):
         if(self.enemy.path!=None):
             arcade.draw_line_strip(self.enemy.path, arcade.color.BLACK, 2)
 
+
+
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.can_control:
             return
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.player.melee()
         elif button == arcade.MOUSE_BUTTON_LEFT:
-            if self.player.type == 1:
+            if self.player.type == 1 or self.player.type == 4:
                 self.player.range(x, y, self.view_left, self.view_bottom)
             elif self.player.type == 2:
                 if (self.player.projectile_state):
@@ -378,7 +390,7 @@ class MyGame(arcade.Window):
             self.player.change_y=0
 
     def on_key_press(self, key, modifiers):
-        if not self.can_control:
+        if not self.can_control or (self.player.dead and key!=32):
             return
         """Called whenever a key is pressed. """
 
@@ -518,7 +530,7 @@ class MyGame(arcade.Window):
         self.cutscene_timer += delta_time 
         if (self.cutscene_timer == delta_time):
             self.player.set_brightness(0)
-            self.player.health = 2
+            self.player.health = 5
             self.player.movement_speed = 1
 
 
@@ -526,6 +538,7 @@ class MyGame(arcade.Window):
             self.story_idx = 1
 
         if (self.cutscene_timer > 7):
+            self.player.health = 2
             brightness = self.player.color[0]
             brightness += 10
             if (brightness > 255):
@@ -605,18 +618,28 @@ class MyGame(arcade.Window):
 
         # self.enemy.move()
 
-        for bullet in self.player.bullet_list:
-            wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
-            enemy_hit_list = arcade.check_for_collision(bullet, self.enemy)
+        for player in self.player_list:
+            for bullet in player.bullet_list:
+                wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
+                enemy_hit_list = arcade.check_for_collision(bullet, self.enemy)
 
-            if len(wall_hit_list) > 0 or enemy_hit_list:
-                bullet.remove_from_sprite_lists()
+                if len(wall_hit_list) > 0 or enemy_hit_list:
+                    bullet.remove_from_sprite_lists()
 
-            if enemy_hit_list:
-                self.enemy.health -= 1
+                if enemy_hit_list:
+                    self.enemy.health -= 1
 
-            if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
-                bullet.remove_from_sprite_lists()
+                if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
+                    bullet.remove_from_sprite_lists()
+
+            if player.explosion_happening:
+                enemy_hit_list = arcade.check_for_collision_with_list(player.explosion_sprites[int(player.explosion_index)],
+                                                                self.enemy_list)
+                for enemy in enemy_hit_list:
+                    enemy.health -= 1
+
+
+        
 
         for health in self.health_pickup_list:
             pickup = arcade.check_for_collision(health, self.player)
@@ -626,18 +649,10 @@ class MyGame(arcade.Window):
 
         hit_list = arcade.check_for_collision_with_list(self.player, self.enemy_list)
         for enemy in hit_list:
+            if enemy.path_traversal_state == 'ATTACK':
+                self.player.getDamaged(enemy.center_x, enemy.center_y)
+                enemy.deagro()
 
-            self.player.health-=1
-
-            if enemy.bottom > self.player.bottom:
-                self.player.bottom -= 100
-            elif enemy.bottom < self.player.bottom:
-                self.player.bottom += 100
-
-            if enemy.left > self.player.left:
-                self.player.left -= 100
-            elif enemy.left < self.player.left:
-                self.player.left += 100
 
         
         if self.player.melee_attacking:
@@ -663,6 +678,8 @@ class MyGame(arcade.Window):
         self.enemy_physics_engine.update()
         self.enemy.update()
         self.enemy.update_animation()
+
+
 
         
         #print(self.enemy.path)

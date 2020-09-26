@@ -219,17 +219,11 @@ class Enemy(arcade.Sprite):
             new_follow = 'init'
 
         if(new_follow==self.follow and self.path!=None and self.path_idx<len(self.path)
-            and self.frame_counter<600):
+            and self.frame_counter<60):
             if((self.path!=None and len(self.path)>0) 
             and ((dest==self.window.player.position and len(self.path)<60) 
             or dest==(self.init_x,self.init_y))):
                 self.traverse_path()
-                if(self.collides_with_sprite(self.window.player)):
-                    # self.on_counter=0
-                    self.change_x=0
-                    self.change_y=0
-                    self.path_traversal_state='RETURN'
-                    self.path_traversal_state_counter=0  
         else:
             self.path_idx=1
             self.frame_counter=0
@@ -244,6 +238,11 @@ class Enemy(arcade.Sprite):
         if(self.path_traversal_state_counter>=120 and self.path_traversal_state=='RETURN'):
             self.path_traversal_state_counter=0
             self.path_traversal_state='ATTACK'
+
+    
+
+    
+       
         # self.on_counter+=1
         #print(self.frame_counter)
 
@@ -262,7 +261,12 @@ class Enemy(arcade.Sprite):
         #     self.change_x=0
         #     self.change_y=0
         
+    def deagro(self):
 
+        self.change_x=0
+        self.change_y=0
+        self.path_traversal_state='RETURN'
+        self.path_traversal_state_counter=0  
 
 
 
