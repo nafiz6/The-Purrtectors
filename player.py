@@ -383,6 +383,7 @@ class Player(arcade.Sprite):
             self.rem_bullets -= 1
             if self.rem_bullets == 0:
                 self.bullet_regen_timer = 75
+            arcade.play_sound(self.shooting_sound)
 
         elif self.type == 2:
             self.explosion_happening = True   

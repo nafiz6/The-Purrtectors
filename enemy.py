@@ -447,3 +447,177 @@ class Turret(Enemy):
         if(self.path_traversal_state_counter>=120 and self.path_traversal_state=='WAIT'):
             self.path_traversal_state_counter=0
             self.path_traversal_state='ATTACK'
+
+    def deagro(self):
+        None
+
+class Boss(Enemy):
+    def __init__(self,window):
+        super().__init__(window)
+
+    def setup(self, img_src, scale, start_x, start_y, enemy_type):
+        super().setup(img_src, scale, start_x, start_y, enemy_type)
+        self.path_traversal_state='MELEE'
+
+#     def update(self):        
+#         dest = None
+#         new_follow=None
+
+#         if(self.path_traversal_state=='MELEE' or self.path_traversal_state=='RETURN'):
+#             dest = None
+#             new_follow=None
+
+#             if(self.path_traversal_state=='MELEE' and 
+#             ((
+#             self.window.player.center_x<self.range_x[1] 
+#             and self.window.player.center_x>self.range_x[0]
+#             and self.window.player.center_y<self.range_y[1]
+#             and self.window.player.center_y>self.range_y[0]
+#             ) or (self.center_x > self.window.view_left and self.center_x < self.window.view_left + SCREEN_WIDTH
+#                 and self.center_y > self.window.view_bottom and self.center_y < self.window.view_bottom + SCREEN_HEIGHT))
+#             and self.window.player.visibility):
+#                 dest = self.window.player.position
+#                 new_follow = 'player'
+#             else:
+#                 dest = (self.init_x,self.init_y)
+#                 new_follow = 'init'
+#                 self.path_traversal_state='RETURN'
+
+#             if(new_follow==self.follow and self.path!=None and self.path_idx<len(self.path)
+#                 and self.frame_counter<60):
+#                 if((self.path!=None and len(self.path)>0) 
+#                 and ((dest==self.window.player.position and len(self.path)<60) 
+#                 or dest==(self.init_x,self.init_y))):
+#                     self.traverse_path()
+#             else:
+#                 self.path_idx=1
+#                 self.frame_counter=0
+#                 self.follow = new_follow
+#                 self.path = arcade.astar_calculate_path((self.center_x,self.center_y),
+#                                                     dest, 
+#                                                     self.barrier_list,
+#                                                     diagonal_movement=True)
+
+#             self.frame_counter+=1
+#             self.path_traversal_state_counter+=1
+#             if(self.path_traversal_state_counter>=120 and self.path_traversal_state=='RETURN'):
+#                 self.path_traversal_state_counter=0
+#                 self.path_traversal_state='SHOOT'
+#         elif self.path_traversal_state=='SHOOT' or self.path_traversal_state=='WAIT':
+#             dest = None
+#             new_follow=None
+
+#             if(self.path_traversal_state=='SHOOT' and 
+#             self.window.player.center_x<self.range_x[1] 
+#             and self.window.player.center_x>self.range_x[0]
+#             and self.window.player.center_y<self.range_y[1]
+#             and self.window.player.center_y>self.range_y[0]):
+#                 dest = self.window.player.position
+#                 new_follow = 'player'
+#             else:
+#                 dest = (self.init_x,self.init_y)
+#                 new_follow = 'init'
+
+#             if(self.path_traversal_state=='SHOOT' and new_follow==self.follow and self.path!=None and self.path_idx<len(self.path)
+#                 and self.frame_counter<600):
+#                 if((self.path!=None and len(self.path)>0) 
+#                 and ((dest==self.window.player.position and len(self.path)<60) 
+#                 or dest==(self.init_x,self.init_y))):
+#                     self.traverse_path()
+#                     if(arcade.has_line_of_sight(self.position,self.window.player.position,self.window.wall_list)):
+#                         self.range(self.window.player.center_x,self.window.player.center_y,self.window.view_left,self.window.view_bottom)
+#                         self.path_traversal_state='WAIT'
+#                         self.path_traversal_state_counter=0
+#                         self.change_x=0
+#                         self.change_y=0
+#             elif self.path_traversal_state_counter=='WAIT':
+#                 None
+#             else:
+#                 self.path_idx=1
+#                 self.frame_counter=0
+#                 self.follow = new_follow
+#                 self.path = arcade.astar_calculate_path((self.center_x,self.center_y),
+#                                                     dest, 
+#                                                     self.barrier_list,
+#                                                     diagonal_movement=True)
+
+#             self.frame_counter+=1
+#             self.path_traversal_state_counter+=1
+#             if(self.path_traversal_state_counter>=120 and self.path_traversal_state=='WAIT'):
+#                 self.path_traversal_state_counter=0
+#                 self.path_traversal_state='MELEE'
+
+
+    def update(self):
+        states = ['MELEE','WAIT_FOR_SHOOT','SHOOT',"WAIT_FOR_MELEE"]
+
+
+        if(self.path_traversal_state=='MELEE'):
+            if(self.path!=None and len(self.path)<60):
+                if(self.path_idx<len(self.path) and len(self.path)>1):
+                    self.traverse_path()
+                elif arcade.check_for_collision(self,self.window.player):
+                    # self.window.player.getDamaged(self.window.player.center_x,self.window.player.center_y)
+                    self.path_traversal_state='WAIT_FOR_SHOOT'
+                    self.path_traversal_state_counter=0
+                    self.change_x=0
+                    self.change_y=0
+                else:
+                    self.path_traversal_state='WAIT_FOR_SHOOT'
+                    self.path_traversal_state_counter=0
+                    self.change_x=0
+                    self.change_y=0
+        elif self.path_traversal_state=='WAIT_FOR_SHOOT':
+            None
+        elif self.path_traversal_state=='SHOOT':
+            if(self.path!=None and len(self.path)<60):
+                if(self.path_idx<len(self.path) and len(self.path)>1):
+                    self.traverse_path()
+                    if(arcade.has_line_of_sight((self.center_x,self.center_y),
+                        (self.window.player.center_x,self.window.player.center_y),
+                        self.window.wall_list)):
+                            self.range(self.window.player.center_x,self.window.player.center_y,self.window.view_left,self.window.view_bottom)
+                            self.path_traversal_state='WAIT_FOR_MELEE'
+                            self.path_traversal_state_counter=0
+                            self.change_x=0
+                            self.change_y=0
+                        
+                elif arcade.check_for_collision(self,self.window.player):
+                    None
+                    self.path_traversal_state='WAIT_FOR_MELEE'
+                    self.path_traversal_state_counter=0
+                    self.change_x=0
+                    self.change_y=0
+                else:
+                    self.path_traversal_state='WAIT_FOR_MELEE'
+                    self.path_traversal_state_counter=0
+                    self.change_x=0
+                    self.change_y=0
+        elif (self.path_traversal_state=='WAIT_FOR_MELEE'):
+            None
+
+        self.frame_counter+=1
+        self.path_traversal_state_counter+=1
+
+        if(self.path_traversal_state_counter>=120):
+            self.path_traversal_state_counter=0
+            for i in range(4):
+                if(self.path_traversal_state==states[i]):
+                    self.path_traversal_state=states[(i+1)%4]
+                    break
+        if(self.frame_counter>40 and self.path_traversal_state!=states[1] or self.path_traversal_state!=states[3]):
+            self.frame_counter=0
+            self.path = arcade.astar_calculate_path(self.position,
+                                                    (self.window.player.center_x,self.window.player.center_y),
+                                                    self.barrier_list,
+                                                    True)
+            self.path_idx=1
+
+    def deagro(self):
+        None
+
+
+
+
+        
+
