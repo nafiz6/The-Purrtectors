@@ -6,6 +6,8 @@ import math
 from player import Player
 from enemy import Enemy
 from enemy import Turret
+from enemy import Boss
+
 
 # Constants
 SCREEN_WIDTH = 1300
@@ -238,7 +240,7 @@ class MyGame(arcade.Window):
     
 
         self.enemy = Turret(self)
-        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2000, 300, TURRET)
+        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2800, 300, TURRET)
         self.enemy_list.append(self.enemy)
         print(self.enemy.dead)
 
@@ -450,8 +452,9 @@ class MyGame(arcade.Window):
         arcade.draw_text(plot_text[self.story_idx], 10 + self.view_left, 40 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
 
-        if(self.enemy.path!=None):
-            arcade.draw_line_strip(self.enemy.path, arcade.color.BLACK, 2)
+        if(self.boss.path!=None):
+            arcade.draw_line_strip(self.boss.path, arcade.color.BLACK, 2)
+            # print("boss")
 
 
 
@@ -809,6 +812,10 @@ class MyGame(arcade.Window):
 
 
         
+        for e in self.enemy_list:
+            for bullet in e.bullet_list:
+                wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
+                enemy_hit_list = arcade.check_for_collision(bullet, self.player)
 
         for enemy in self.enemy_list:
             for bullet in enemy.bullet_list:
@@ -820,6 +827,12 @@ class MyGame(arcade.Window):
 
                 if enemy_hit_list:
                     self.player.getDamaged(bullet.center_x, bullet.center_y)
+                if len(wall_hit_list) > 0 or enemy_hit_list:
+                    bullet.remove_from_sprite_lists()
+
+                print(enemy_hit_list,bullet.position,self.player.position)
+                if enemy_hit_list:
+                    self.player.getDamaged(enemy.center_x, enemy.center_y)
 
                 if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
                     bullet.remove_from_sprite_lists()
@@ -832,7 +845,7 @@ class MyGame(arcade.Window):
 
         hit_list = arcade.check_for_collision_with_list(self.player, self.enemy_list)
         for enemy in hit_list:
-            if enemy.path_traversal_state == 'ATTACK':
+            if enemy.path_traversal_state == 'ATTACK' or enemy.path_traversal_state=='SHOOT' or enemy.path_traversal_state=='MELEE':
                 self.player.getDamaged(enemy.center_x, enemy.center_y)
                 enemy.deagro()
 
@@ -857,7 +870,6 @@ class MyGame(arcade.Window):
         for enemy in self.enemy_list:
             enemy.update()
             enemy.update_animation()
-        #print(self.player.center_x, self.player.center_y)
 
 
 
