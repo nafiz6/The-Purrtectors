@@ -36,6 +36,8 @@ LEFT_FACING=1
 CUTSCENE_1 = 1
 PLAYTHROUGH_1 = 2
 
+BLACK_BAR_HEIGHT = 100
+
 
 
 
@@ -91,6 +93,7 @@ class MyGame(arcade.Window):
         self.dashable_list=None
         self.blockable_list=None
         self.health_pickup_list=None
+        self.health_sprite = None
 
         self.can_control = None
 
@@ -99,7 +102,7 @@ class MyGame(arcade.Window):
         self.enemy = None
 
         # Our physics engine
-        self.physics_engine = None
+        self.physics_engines = None
         self.enemy_physics_engine = None
 
         # Used to keep track of our scrolling
@@ -121,6 +124,7 @@ class MyGame(arcade.Window):
         self.state = None
 
         self.cutscene_timer = None
+        self.player_idx = None
 
         # --- Load in a map from the tiled editor ---
     def load_level(self,path_to_map,map_width,map_height,tile_width,tile_height,tile_scale):
@@ -191,16 +195,25 @@ class MyGame(arcade.Window):
         self.dashable_list = arcade.SpriteList()
         self.blockable_list = arcade.SpriteList()
         self.health_pickup_list = arcade.SpriteList()
+
+        self.player_idx = 0
     
         self.load_level("./maps/level-1.tmx",50,50,16,16,TILE_SCALING)
 
         # Set up the player, specifically placing it at these coordinates.
         self.player = Player()
         self.second_player = Player()
-        self.player.setup("./characters/cat", CHARACTER_SCALING, 550, 1020)
-        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 350, 200)
+        self.third_player = Player()
+        self.fourth_player = Player()
+        self.player.setup("./characters/cat", CHARACTER_SCALING, 550, 1020, 1)
+        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 350, 200, 2)
+        self.third_player.setup("./characters/cat", CHARACTER_SCALING, 350, 400, 3)
+        self.fourth_player.setup("./characters/cat", CHARACTER_SCALING*1.2, 350, 416, 4)
         self.player_list.append(self.player)
         self.player_list.append(self.second_player)
+        self.player_list.append(self.third_player)
+        self.player_list.append(self.fourth_player)
+        self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
 
         self.enemy = Enemy()
         self.enemy.setup()
@@ -228,22 +241,43 @@ class MyGame(arcade.Window):
         
 
         # Create the 'physics engine'
+        self.physics_engines = []
 
+        for player in self.player_list:
+            if (player == self.player):
+                self.physics_engines.append(
+                        arcade.PhysicsEngineSimple(player, self.enemy_list,
+                                                                 )
+                                                    )
+
+            else:
+                self.physics_engines.append(
+                        arcade.PhysicsEngineSimple(player, self.blockable_list,
+                                                                 )
+                                                    )
+            
+
+
+        """
         self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
                                                              self.blockable_list,
                                                              )
+                                                             """
         self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
                                                              self.blockable_list,
                                                              )
+        """
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                             self.enemy_list
                                                              )
+                                                             """
 
 
     def setup_post_cut_scene(self):
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
+        self.physics_engines[self.player_idx] = arcade.PhysicsEngineSimple(self.player,
                                                              self.blockable_list
                                                              )
+                                           
 
     def on_draw(self):
         """ Render the screen. """
@@ -262,6 +296,28 @@ class MyGame(arcade.Window):
         if self.player.melee_attacking:
             self.player.melee_list.draw()
 
+        if self.player.projectile_state:
+            arcade.draw_circle_filled(self.mouse_x + self.view_left,
+                                self.mouse_y + self.view_bottom, 100,
+                             	(100, 149, 237, 50))
+
+
+        for i in range(self.player.health):
+            self.health_sprite.left = self.view_left + 10 + i*(self.health_sprite.width + 10)
+            self.health_sprite.bottom = self.view_bottom + SCREEN_HEIGHT - self.health_sprite.height - 10 
+            self.health_sprite.draw()
+        
+        rect = arcade.create_rectangle_filled(self.view_left + SCREEN_WIDTH/2, 
+                self.view_bottom + BLACK_BAR_HEIGHT/2, SCREEN_WIDTH, BLACK_BAR_HEIGHT,
+                (0,0,0))
+        """
+        rect = arcade.create_rectangle_filled(self.player.center_x, 
+                self.player.center_y, SCREEN_WIDTH, BLACK_BAR_HEIGHT,
+                (0,0,0))
+        """
+        #rect.draw()
+
+
         # Draw our health on the screen, scrolling it with the viewport
         health_text = f"health: {self.player.health} enemy: {self.enemy.health} stamina: {self.player.stamina}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
@@ -273,7 +329,13 @@ class MyGame(arcade.Window):
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.player.melee()
         elif button == arcade.MOUSE_BUTTON_LEFT:
-            self.player.range(x, y, self.view_left, self.view_bottom)
+            if self.player.type == 1:
+                self.player.range(x, y, self.view_left, self.view_bottom)
+            elif self.player.type == 2:
+                if (self.player.projectile_state):
+                    self.player.range(x, y, self.view_left, self.view_bottom)
+                else:
+                    self.player.heal(x + self.view_left, y + self.view_bottom, self.player_list)
 
     def on_mouse_motion(self, x, y, dx, dy):
         #position of mouse relative to palyer
@@ -315,17 +377,25 @@ class MyGame(arcade.Window):
                 self.player.direction_y = 0
         elif key == 65505: 
             """shift"""
-            if not self.dashable_removed:
-                for sprite in self.dashable_list:
-                    self.blockable_list.remove(sprite)
-            self.dashable_removed = True
-                
 
-            dash = self.player.dash()
-            #if(dash!=(self.player.center_x,self.player.center_y) and arcade.has_line_of_sight((self.player.center_x,self.player.center_y),dash,self.wall_list)):
-            #        self.player.center_x,self.player.center_y = dash
-            
-            
+            if (self.player.type == 1):
+
+                if not self.dashable_removed:
+                    for sprite in self.dashable_list:
+                        self.blockable_list.remove(sprite)
+                self.dashable_removed = True
+                    
+
+                dash = self.player.dash()
+                #if(dash!=(self.player.center_x,self.player.center_y) and arcade.has_line_of_sight((self.player.center_x,self.player.center_y),dash,self.wall_list)):
+                #        self.player.center_x,self.player.center_y = dash
+                
+            elif (self.player.type == 2):
+                self.player.projectile_state = True
+
+            elif self.player.type == 3:
+                self.player.invisible()
+                
 
         elif key == 32: #space
             #stop motion
@@ -333,9 +403,11 @@ class MyGame(arcade.Window):
             self.player.change_y = 0
 
             #make selected
-            temp = self.player
-            self.player = self.second_player
-            self.second_player = temp
+            self.player_idx += 1
+            if self.player_idx >= len(self.player_list):
+                self.player_idx = 0
+            self.player = self.player_list[self.player_idx]
+            
 
     def on_key_release(self, key, modifiers):
         if not self.can_control:
@@ -405,8 +477,8 @@ class MyGame(arcade.Window):
             self.view_left = max(0,self.view_left)
             self.view_left = min(self.view_left,self.level_width-SCREEN_WIDTH)
 
-            self.view_bottom = max(0,self.view_bottom)
-            self.view_bottom = min(self.view_bottom,self.level_height-SCREEN_HEIGHT)
+            self.view_bottom = max(-BLACK_BAR_HEIGHT,self.view_bottom)
+            self.view_bottom = min(self.view_bottom,self.level_height + BLACK_BAR_HEIGHT - SCREEN_HEIGHT)
 
             # Do the scrolling
             arcade.set_viewport(self.view_left,
@@ -521,8 +593,8 @@ class MyGame(arcade.Window):
 
 
 
-        self.physics_engine.update()
-        self.physics_engine_second.update()
+        for physics_engine in self.physics_engines:
+            physics_engine.update()
         self.enemy_physics_engine.update()
 
 
