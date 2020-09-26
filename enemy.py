@@ -271,8 +271,8 @@ class Enemy(arcade.Sprite):
         bullet.center_x = self.center_x
         bullet.center_y = self.center_y
 
-        x_diff = x - self.center_x + view_left 
-        y_diff = y - self.center_y + view_bottom
+        x_diff = x - self.center_x  
+        y_diff = y - self.center_y 
 
         angle = math.atan2(y_diff, x_diff)
 
@@ -347,7 +347,7 @@ class Turret(Enemy):
             dest = (self.init_x,self.init_y)
             new_follow = 'init'
 
-        if(new_follow==self.follow and self.path!=None and self.path_idx<len(self.path)
+        if(self.path_traversal_state=='ATTACK' and new_follow==self.follow and self.path!=None and self.path_idx<len(self.path)
             and self.frame_counter<600):
             if((self.path!=None and len(self.path)>0) 
             and ((dest==self.window.player.position and len(self.path)<60) 

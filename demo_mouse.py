@@ -106,6 +106,8 @@ class MyGame(arcade.Window):
 
         self.can_control = None
 
+        self.in_start_screen = None
+
         # Separate variable that holds the player sprite
         self.player = None
         self.enemy = None
@@ -190,9 +192,11 @@ class MyGame(arcade.Window):
         self.view_bottom = 0
         self.view_left = 0
 
+        
         self.state = CUTSCENE_1
         self.cutscene_timer = 0
         self.can_control = False
+        self.in_start_screen = True
 
         self.dashable_removed = False
 
@@ -205,6 +209,7 @@ class MyGame(arcade.Window):
         self.dashable_list = arcade.SpriteList()
         self.blockable_list = arcade.SpriteList()
         self.health_pickup_list = arcade.SpriteList()
+        
 
         self.player_idx = 0
         self.story_idx = 0 
@@ -225,6 +230,7 @@ class MyGame(arcade.Window):
         self.player_list.append(self.third_player)
         self.player_list.append(self.fourth_player)
         self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
+    
 
         self.enemy = Turret(self)
         self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 1200, 300, RANGE)
@@ -304,6 +310,8 @@ class MyGame(arcade.Window):
         self.props_list.draw()
         self.health_pickup_list.draw()
         self.enemy.bullet_list.draw()
+
+
 
         if self.player.melee_attacking:
             self.player.melee_list.draw()
@@ -594,7 +602,7 @@ class MyGame(arcade.Window):
             player.update()
             player.bullet_list.update()
 
-        
+          
         if (self.state == CUTSCENE_1):
             self.animate_cutscene_1(delta_time)
         elif (self.state == PLAYTHROUGH_1):

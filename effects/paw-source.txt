@@ -1,1 +1,3 @@
-https://commons.wikimedia.org/wiki/File:Paw-print.svg
+paw: https://commons.wikimedia.org/wiki/File:Paw-print.svg
+
+cat-dash icon: https://commons.wikimedia.org/wiki/File:Leaping_puma_icon_-_black.svg
