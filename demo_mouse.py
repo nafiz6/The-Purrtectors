@@ -4,6 +4,7 @@ Platformer Game
 import arcade
 import math
 from player import Player
+from enemy import Enemy
 
 # Constants
 SCREEN_WIDTH = 1300
@@ -44,36 +45,36 @@ BLACK_BAR_HEIGHT = 100
 
 
 
-class Enemy:
-    def __init__(self):
-        self.sprite = None
-        self.health = 10
+# class Enemy:
+#     def __init__(self):
+#         self.sprite = None
+#         self.health = 10
 
-    def setup(self):
-        image_source = "./tiles/5_enemies_1_idle_007.png"
-        self.direction = RIGHT_FACING
-        self.sprite = arcade.Sprite(image_source, ENEMY_SCALING)
-        self.sprite.initial_x = 900
-        self.sprite.center_x = 900
-        self.sprite.center_y = 1200
-        self.walk_range = 100
+#     def setup(self):
+#         image_source = "./tiles/5_enemies_1_idle_007.png"
+#         self.direction = RIGHT_FACING
+#         self.sprite = arcade.Sprite(image_source, ENEMY_SCALING)
+#         self.sprite.initial_x = 900
+#         self.sprite.center_x = 900
+#         self.sprite.center_y = 1200
+#         self.walk_range = 100
 
-    def move(self):
-        if self.sprite.change_x == 0:
-            if self.direction == LEFT_FACING:
-                self.direction = RIGHT_FACING
-            else:
-                self.direction = LEFT_FACING
+#     def move(self):
+#         if self.sprite.change_x == 0:
+#             if self.direction == LEFT_FACING:
+#                 self.direction = RIGHT_FACING
+#             else:
+#                 self.direction = LEFT_FACING
         
-        if self.sprite.center_x > self.sprite.initial_x + self.walk_range:
-            self.direction = LEFT_FACING
-        elif self.sprite.center_x < self.sprite.initial_x - self.walk_range:
-            self.direction = RIGHT_FACING
+#         if self.sprite.center_x > self.sprite.initial_x + self.walk_range:
+#             self.direction = LEFT_FACING
+#         elif self.sprite.center_x < self.sprite.initial_x - self.walk_range:
+#             self.direction = RIGHT_FACING
 
-        if self.direction == LEFT_FACING:
-            self.sprite.change_x = -PLAYER_MOVEMENT_SPEED
-        else:
-            self.sprite.change_x = +PLAYER_MOVEMENT_SPEED
+#         if self.direction == LEFT_FACING:
+#             self.sprite.change_x = -PLAYER_MOVEMENT_SPEED
+#         else:
+#             self.sprite.change_x = +PLAYER_MOVEMENT_SPEED
 
 
         
@@ -220,9 +221,9 @@ class MyGame(arcade.Window):
         self.player_list.append(self.fourth_player)
         self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
 
-        self.enemy = Enemy()
-        self.enemy.setup()
-        self.enemy_list.append(self.enemy.sprite)
+        self.enemy = Enemy(self)
+        self.enemy.setup("./characters/cat", CHARACTER_SCALING, 900, 1200)
+        self.enemy_list.append(self.enemy)
 
         for sprite in self.wall_list:
             self.blockable_list.append(sprite)
@@ -263,19 +264,18 @@ class MyGame(arcade.Window):
             
 
 
-        """
         self.physics_engine_second = arcade.PhysicsEngineSimple(self.second_player,
                                                              self.blockable_list,
                                                              )
-                                                             """
-        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy.sprite,
+
+        self.enemy_physics_engine = arcade.PhysicsEngineSimple(self.enemy,
                                                              self.blockable_list,
                                                              )
         """
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                             self.enemy_list
                                                              )
-                                                             """
+        """
 
 
     def setup_post_cut_scene(self):
@@ -283,6 +283,7 @@ class MyGame(arcade.Window):
                                                              self.blockable_list
                                                              )
                                            
+        self.enemy.barrier_list.recalculate()
 
     def on_draw(self):
         """ Render the screen. """
@@ -341,6 +342,9 @@ class MyGame(arcade.Window):
                          arcade.csscolor.WHITE, 27, bold = True)
         arcade.draw_text(plot_text[self.story_idx], 10 + self.view_left, 40 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
+
+        if(self.enemy.path!=None):
+            arcade.draw_line_strip(self.enemy.path, arcade.color.BLACK, 2)
 
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.can_control:
@@ -583,6 +587,7 @@ class MyGame(arcade.Window):
             player.update()
             player.bullet_list.update()
 
+        
         if (self.state == CUTSCENE_1):
             self.animate_cutscene_1(delta_time)
         elif (self.state == PLAYTHROUGH_1):
@@ -594,7 +599,8 @@ class MyGame(arcade.Window):
         elif (self.state == PLAYTHROUGH_4):
             self.playthrough_4(delta_time)
 
-        
+        # self.enemy.move()
+
         for bullet in self.player.bullet_list:
             wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
             enemy_hit_list = arcade.check_for_collision(bullet, self.enemy.sprite)
@@ -651,6 +657,11 @@ class MyGame(arcade.Window):
         for physics_engine in self.physics_engines:
             physics_engine.update()
         self.enemy_physics_engine.update()
+
+        
+        print(self.enemy.path)
+        print(self.player.center_x,self.player.center_y)
+
 
 
 
