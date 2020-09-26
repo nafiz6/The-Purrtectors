@@ -138,15 +138,15 @@ class Enemy(arcade.Sprite):
         self.path_idx=0
         self.follow = None
         self.path=None
-        
-        
+        self.path_traversal_state = 'ATTACK'    
+        self.path_traversal_state_counter = 0    
+
     def health_pickup(self):
         self.health = 5
         self.movement_speed = 4
 
     def set_brightness(self, brightness):
         self.color = [brightness, brightness, brightness]
-
 
     def dash(self):
         if self.stamina > 0:
@@ -195,22 +195,12 @@ class Enemy(arcade.Sprite):
         self.change_x=dx/m*ENEMY_SPEED
         self.change_y=dy/m*ENEMY_SPEED
 
-    def update(self):
-        # dx = self.window.player.center_x-self.center_x
-        # dy = self.window.player.center_y-self.center_y 
-        # m = magnitude(dx,dy) 
-        # if(m<300):
-        #     vx = dx/m*ENEMY_SPEED
-        #     vy = dy/m*ENEMY_SPEED
-        #     self.change_x=vx
-        #     self.change_y=vy
-        # else: 
-        #     self.change_x=0
-        #     self.change_y=0
-
+    def update(self):        
         dest = None
         new_follow=None
-        if(self.window.player.center_x<self.range_x[1] 
+
+        if(self.path_traversal_state=='ATTACK' and 
+        self.window.player.center_x<self.range_x[1] 
         and self.window.player.center_x>self.range_x[0]
         and self.window.player.center_y<self.range_y[1]
         and self.window.player.center_y>self.range_y[0]):
@@ -226,6 +216,12 @@ class Enemy(arcade.Sprite):
             and ((dest==self.window.player.position and len(self.path)<60) 
             or dest==(self.init_x,self.init_y))):
                 self.traverse_path()
+                if(self.collides_with_sprite(self.window.player)):
+                    # self.on_counter=0
+                    self.change_x=0
+                    self.change_y=0
+                    self.path_traversal_state='RETURN'
+                    self.path_traversal_state_counter=0  
         else:
             self.path_idx=1
             self.frame_counter=0
@@ -236,6 +232,11 @@ class Enemy(arcade.Sprite):
                                                 diagonal_movement=True)
 
         self.frame_counter+=1
+        self.path_traversal_state_counter+=1
+        if(self.path_traversal_state_counter>=120 and self.path_traversal_state=='RETURN'):
+            self.path_traversal_state_counter=0
+            self.path_traversal_state='ATTACK'
+        # self.on_counter+=1
         #print(self.frame_counter)
 
         # if((self.path!=None and len(self.path)>0) 
