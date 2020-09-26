@@ -35,11 +35,28 @@ TOP_VIEWPORT_MARGIN = 250
 RIGHT_FACING=0
 LEFT_FACING=1
 
-CUTSCENE_1 = 1
+CUTSCENE_1 = 1111
+
+CUTSCENE_2 = 2222
+CUTSCENE_3 = 3333
+
+
 PLAYTHROUGH_1 = 2
 PLAYTHROUGH_2 = 3
 PLAYTHROUGH_3 = 4
 PLAYTHROUGH_4 = 5
+PLAYTHROUGH_5 = 6
+PLAYTHROUGH_6 = 7
+PLAYTHROUGH_7 = 8
+PLAYTHROUGH_8 = 9
+PLAYTHROUGH_9 = 10
+PLAYTHROUGH_10 = 11
+PLAYTHROUGH_11 = 12
+PLAYTHROUGH_12 = 13
+PLAYTHROUGH_13 = 14
+
+
+
 
 BLACK_BAR_HEIGHT = 100
 
@@ -388,7 +405,16 @@ class MyGame(arcade.Window):
                  "Cat: I'm weak. I need to find something to heal", 
                  "Cat: That's a lot better! I need to figure out what's going on.",
                  "Cat: Maybe I can dash over that hole \n Press Shift to Dash",
-                 ""]
+                 "",
+                 "Stranger: Woa you seem to be good at this",
+                 "You: WHAT THE HECK IS GOING ON??",
+                 "Stranger: EVERYONE hates us now...we have to fight for our lives….you coming with me..?",
+                 "You: ..ummm..",
+                 "Stranger: ..unless you wanna hide out here forever..",
+                 "You: ok..?",
+                 "Stranger: good enough, let's go",
+                 ""
+                 ]
 
 
         # Draw our health on the screen, scrolling it with the viewport
@@ -573,6 +599,7 @@ class MyGame(arcade.Window):
         self.cutscene_timer += delta_time 
         if (self.cutscene_timer == delta_time):
             self.player.set_brightness(0)
+            self.player.set_brightness(0)
             self.player.health = 5
             self.player.movement_speed = 1
 
@@ -626,10 +653,65 @@ class MyGame(arcade.Window):
     def playthrough_4(self, delta_time):
         if self.player.center_x > 1159:
             self.story_idx = 6
-        pass
+            self.state = PLAYTHROUGH_5
+        
+
+
+    def playthrough_5(self, delta_time):
+        # my cutscenes start here
+        if self.player.center_y > 2531 and self.player.center_x > 2600:
+            self.story_idx = 7
+            self.state = PLAYTHROUGH_6s
+            self.cutscene_timer = 0
+
+
+    def playthrough_6(self, delta_time):
+        self.cutscene_timer += delta_time
+        if self.cutscene_timer > 6:
+            self.story_idx = 8
+            self.state = PLAYTHROUGH_7
+            self.cutscene_timer = 0
+
+    def playthrough_7(self, delta_time):
+        self.cutscene_timer += delta_time
+        if self.cutscene_timer > 6:
+            self.story_idx = 9
+            self.state = PLAYTHROUGH_8
+            self.cutscene_timer = 0
+
+    def playthrough_8(self, delta_time):
+        self.cutscene_timer += delta_time
+        if self.cutscene_timer > 6:
+            self.story_idx = 10
+            self.state = PLAYTHROUGH_9
+            self.cutscene_timer = 0
+
+    def playthrough_9(self, delta_time):
+        self.cutscene_timer += delta_time
+        if self.cutscene_timer > 6:
+            self.story_idx = 11
+            self.state = PLAYTHROUGH_10
+            self.cutscene_timer = 0
+
+    def playthrough_10(self, delta_time):
+        self.cutscene_timer += delta_time
+        if self.cutscene_timer > 6:
+            self.story_idx = 12
+            self.state = PLAYTHROUGH_11
+            self.cutscene_timer = 0
+
+    def playthrough_11(self, delta_time):
+        self.cutscene_timer += delta_time
+        if self.cutscene_timer > 6:
+            self.story_idx = 13
+            self.state = PLAYTHROUGH_12
+            self.cutscene_timer = 0
+
+    def playthrough_12(self, delta_time):
     
+        pass
 
-
+    
     def on_update(self, delta_time):
 
         if (self.dashable_removed and self.player.dash_timer==0):
@@ -637,7 +719,7 @@ class MyGame(arcade.Window):
         
             for sprite in self.dashable_list:
                 self.blockable_list.append(sprite)
-        #print (self.player.center_x)
+        # print (self.player.center_x)
 
 
         self.update_scroll()
@@ -660,6 +742,24 @@ class MyGame(arcade.Window):
             self.playthrough_3(delta_time)
         elif (self.state == PLAYTHROUGH_4):
             self.playthrough_4(delta_time)
+        elif (self.state == PLAYTHROUGH_5):
+            self.playthrough_5(delta_time)
+        elif (self.state == PLAYTHROUGH_6):
+            self.playthrough_6(delta_time)
+        elif (self.state == PLAYTHROUGH_7):
+            self.playthrough_7(delta_time)
+        elif (self.state == PLAYTHROUGH_8):
+            self.playthrough_8(delta_time)
+        elif (self.state == PLAYTHROUGH_9):
+            self.playthrough_9(delta_time)
+        elif (self.state == PLAYTHROUGH_10):
+            self.playthrough_10(delta_time)
+        elif (self.state == PLAYTHROUGH_11):
+            self.playthrough_11(delta_time)
+        elif (self.state == PLAYTHROUGH_12):
+            self.playthrough_12(delta_time)
+        
+        
 
         # self.enemy.move()
 
