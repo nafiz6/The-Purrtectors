@@ -133,6 +133,8 @@ class Player(arcade.Sprite):
         self.visibility_timer = 100
 
         self.health_regen_timer = 100
+
+        self.melee_sound = arcade.load_sound('sounds/effects/knifeSlice.ogg')
     
         if cat_type == 4:
             self.max_health = 10
@@ -234,6 +236,7 @@ class Player(arcade.Sprite):
         
         
         self.melee_list.append(self.melee_sprite[self.melee_idx])
+
         
 
 
@@ -242,6 +245,8 @@ class Player(arcade.Sprite):
             self.melee_timer = 0
             self.melee_attacking = True
             self.melee_attack_animation()
+            arcade.play_sound(self.melee_sound)
+
 
     def range(self, x , y, view_left, view_bottom):
 

@@ -147,6 +147,7 @@ class Enemy(arcade.Sprite):
         self.path=None
         self.path_traversal_state = 'ATTACK'    
         self.path_traversal_state_counter = 0    
+        self.shoot_sound = arcade.load_sound('sounds/effects/laser2.ogg')
 
     def health_pickup(self):
         self.health = 5
@@ -288,6 +289,7 @@ class Enemy(arcade.Sprite):
         # self.change_x=0
         # self.change_y=0
         print('shooting')
+        arcade.play_sound(self.shoot_sound)
         
     def update_animation(self,delta_time = 1/60):
         if (self.dash_timer>0):

@@ -139,7 +139,7 @@ class MyGame(arcade.Window):
         self.story_idx = None
 
         # --- Load in a map from the tiled editor ---
-    def load_level(self,path_to_map,map_width,map_height,tile_width,tile_height,tile_scale):
+    def load_level(self,path_to_map,path_to_level_sound,map_width,map_height,tile_width,tile_height,tile_scale):
         """ Loads a level"""
 
         # Name of map file to load
@@ -178,7 +178,7 @@ class MyGame(arcade.Window):
         self.level_height = map_height*tile_height*tile_scale
 
         self.dashable_removed = None
-
+        self.level_sound = arcade.load_sound(path_to_level_sound)
 
         # --- Other stuff
         # Set the background color
@@ -214,8 +214,8 @@ class MyGame(arcade.Window):
         self.player_idx = 0
         self.story_idx = 0 
 
-        self.load_level("./maps/level-1.tmx",50,50,16,16,TILE_SCALING)
-
+        self.load_level("./maps/level-1.tmx","sounds/scores/level-1.mp3",50,50,16,16,TILE_SCALING)
+        arcade.play_sound(self.level_sound)
         # Set up the player, specifically placing it at these coordinates.
         self.player = Player()
         self.second_player = Player()
@@ -629,6 +629,19 @@ class MyGame(arcade.Window):
             if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
                 bullet.remove_from_sprite_lists()
 
+        for bullet in self.enemy.bullet_list:
+            wall_hit_list = arcade.check_for_collision_with_list(bullet, self.wall_list)
+            enemy_hit_list = arcade.check_for_collision(bullet, self.player)
+
+            if len(wall_hit_list) > 0 or enemy_hit_list:
+                bullet.remove_from_sprite_lists()
+
+            if enemy_hit_list:
+                self.player.health -= 1
+
+            if bullet.bottom > self.view_bottom + self.height or bullet.top < 0 or bullet.right < 0 or bullet.left > self.view_left + self.width:
+                bullet.remove_from_sprite_lists()
+
         for health in self.health_pickup_list:
             pickup = arcade.check_for_collision(health, self.player)
             if pickup:
@@ -667,7 +680,8 @@ class MyGame(arcade.Window):
                     enemy.left -= 100
         
 
-
+        if(self.level_sound.is_complete()):
+            arcade.play_sound(self.level_sound)
 
         for physics_engine in self.physics_engines:
             physics_engine.update()
