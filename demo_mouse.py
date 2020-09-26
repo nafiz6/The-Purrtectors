@@ -183,6 +183,7 @@ class MyGame(arcade.Window):
         # Set the background color
         if my_map.background_color:
             arcade.set_background_color(my_map.background_color)
+        self.help_text = None
 
     def setup(self):
         """ Set up the game here. Call this function to restart the game. """
@@ -190,6 +191,8 @@ class MyGame(arcade.Window):
         # Used to keep track of our scrolling
         self.view_bottom = 0
         self.view_left = 0
+
+        self.help_text = ""
 
         
         self.state = CUTSCENE_1
@@ -357,7 +360,7 @@ class MyGame(arcade.Window):
 
 
         # Draw our health on the screen, scrolling it with the viewport
-        health_text = f"stamina: {self.enemy.health}"
+        health_text = f"{self.help_text} {self.enemy.health}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
         arcade.draw_text(plot_text[self.story_idx], 10 + self.view_left, 40 + self.view_bottom,
@@ -381,6 +384,8 @@ class MyGame(arcade.Window):
                     self.player.range(x, y, self.view_left, self.view_bottom)
                 else:
                     self.player.heal(x + self.view_left, y + self.view_bottom, self.player_list)
+            elif self.player.type == 3:
+                self.help_text = self.player.sneak_kill(x + self.view_left, y + self.view_bottom, self.enemy_list)
 
     def on_mouse_motion(self, x, y, dx, dy):
         #position of mouse relative to palyer

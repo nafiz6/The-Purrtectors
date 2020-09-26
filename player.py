@@ -245,12 +245,26 @@ class Player(arcade.Sprite):
         if self.dead:
             return
         if (self.healing_state > 0 ):
-            print(self.healing_state)
             return
         cat_to_heal = arcade.get_sprites_at_point((x, y), sprite_list)
         if len(cat_to_heal) > 0 and cat_to_heal[0].max_health > cat_to_heal[0].health:
             cat_to_heal[0].health = cat_to_heal[0].health + 1 
             self.healing_state = 100
+
+        
+    def sneak_kill(self, x, y, sprite_list):
+        if self.dead:
+            return ""
+        if (self.healing_state > 0 ):
+            return ""
+        enemy_to_kill = arcade.get_sprites_at_point((x, y), sprite_list)
+        print(len(enemy_to_kill))
+        if len(enemy_to_kill) > 0 :
+            if magnitude(self.center_x - enemy_to_kill[0].center_x, self.center_y - enemy_to_kill[0].center_y) < self.width * 2:
+                enemy_to_kill[0].health = 0
+                self.healing_state = 100
+            else:
+                return "NOT IN RANGE"
 
         
 
@@ -354,6 +368,7 @@ class Player(arcade.Sprite):
                 sprite.center_x = x + view_left
                 sprite.center_y = y + view_bottom
             bullet_regen_timer = 500
+
 
 
     def invisible(self):

@@ -211,7 +211,8 @@ class Enemy(arcade.Sprite):
         self.window.player.center_x<self.range_x[1] 
         and self.window.player.center_x>self.range_x[0]
         and self.window.player.center_y<self.range_y[1]
-        and self.window.player.center_y>self.range_y[0]):
+        and self.window.player.center_y>self.range_y[0]
+        and self.window.player.visibility):
             dest = self.window.player.position
             new_follow = 'player'
         else:
