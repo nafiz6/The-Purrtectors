@@ -5,6 +5,7 @@ import arcade
 import math
 from player import Player
 from enemy import Enemy
+from enemy import Turret
 
 # Constants
 SCREEN_WIDTH = 1300
@@ -233,7 +234,7 @@ class MyGame(arcade.Window):
         self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
     
 
-        self.enemy = Enemy(self)
+        self.enemy = Turret(self)
         self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 1200, 300, RANGE)
         self.enemy_list.append(self.enemy)
 
@@ -309,6 +310,7 @@ class MyGame(arcade.Window):
         self.enemy_list.draw()
         self.props_list.draw()
         self.health_pickup_list.draw()
+        self.enemy.bullet_list.draw()
 
         self.player.hud_sprite.left = self.view_left
         self.player.hud_sprite.bottom = self.view_bottom + BLACK_BAR_HEIGHT
@@ -502,14 +504,14 @@ class MyGame(arcade.Window):
             changed_left = True
 
         # Scroll up
-        top_boundary = self.view_bottom + SCREEN_HEIGHT - TOP_VIEWPORT_MARGIN
-        if self.player.top > top_boundary and top_boundary<self.level_height-TOP_VIEWPORT_MARGIN:
+        top_boundary = self.view_bottom + SCREEN_HEIGHT - TOP_VIEWPORT_MARGIN - BLACK_BAR_HEIGHT
+        if self.player.top > top_boundary:
             self.view_target_bottom = self.player.top - top_boundary
             changed_bottom = True
 
         # Scroll down
-        bottom_boundary = self.view_bottom + BOTTOM_VIEWPORT_MARGIN
-        if self.player.bottom < bottom_boundary and bottom_boundary>BOTTOM_VIEWPORT_MARGIN:
+        bottom_boundary = self.view_bottom + BOTTOM_VIEWPORT_MARGIN + BLACK_BAR_HEIGHT
+        if self.player.bottom < bottom_boundary:
             self.view_target_bottom = - bottom_boundary + self.player.bottom
             changed_bottom = True
 
@@ -531,8 +533,8 @@ class MyGame(arcade.Window):
             self.view_left = max(0,self.view_left)
             self.view_left = min(self.view_left,self.level_width-SCREEN_WIDTH)
 
-            self.view_bottom = max(0 ,self.view_bottom)
-            self.view_bottom = min(self.view_bottom,self.level_height + BLACK_BAR_HEIGHT - SCREEN_HEIGHT)
+            self.view_bottom = max(-BLACK_BAR_HEIGHT ,self.view_bottom)
+            self.view_bottom = min(self.view_bottom,self.level_height + 2*BLACK_BAR_HEIGHT - SCREEN_HEIGHT)
 
             # Do the scrolling
             arcade.set_viewport(self.view_left,
@@ -613,6 +615,7 @@ class MyGame(arcade.Window):
 
 
         self.update_scroll()
+        self.enemy.bullet_list.update()
 
         for player in self.player_list:
             player.update_animation()

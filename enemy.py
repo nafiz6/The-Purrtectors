@@ -55,7 +55,6 @@ class Enemy(arcade.Sprite):
 
         self.enemy_type = 0
 
-
     def setup(self, img_src, scale, start_x, start_y, enemy_type):
 
         image_source = img_src
@@ -239,12 +238,7 @@ class Enemy(arcade.Sprite):
         if(self.path_traversal_state_counter>=120 and self.path_traversal_state=='RETURN'):
             self.path_traversal_state_counter=0
             self.path_traversal_state='ATTACK'
-
-    
-
-    
-       
-        # self.on_counter+=1
+        
         #print(self.frame_counter)
 
         # if((self.path!=None and len(self.path)>0) 
@@ -281,8 +275,8 @@ class Enemy(arcade.Sprite):
         bullet.center_x = self.center_x
         bullet.center_y = self.center_y
 
-        x_diff = x - self.center_x + view_left 
-        y_diff = y - self.center_y + view_bottom
+        x_diff = x - self.center_x  
+        y_diff = y - self.center_y 
 
         angle = math.atan2(y_diff, x_diff)
 
@@ -293,10 +287,11 @@ class Enemy(arcade.Sprite):
 
         self.bullet_list.append(bullet)
         
-        #stop player motion
-        self.right_click = False
-        self.change_x=0
-        self.change_y=0
+        # #stop player motion
+        # self.right_click = False
+        # self.change_x=0
+        # self.change_y=0
+        print('shooting')
         
     def update_animation(self,delta_time = 1/60):
         if (self.dash_timer>0):
@@ -334,3 +329,53 @@ class Enemy(arcade.Sprite):
 
 
 
+class Turret(Enemy):
+    def __init__(self,window):
+        super().__init__(window)
+
+    # def shoot(self,x,y):
+    #     None
+    
+    def update(self):        
+        dest = None
+        new_follow=None
+
+        if(self.path_traversal_state=='ATTACK' and 
+        self.window.player.center_x<self.range_x[1] 
+        and self.window.player.center_x>self.range_x[0]
+        and self.window.player.center_y<self.range_y[1]
+        and self.window.player.center_y>self.range_y[0]):
+            dest = self.window.player.position
+            new_follow = 'player'
+        else:
+            dest = (self.init_x,self.init_y)
+            new_follow = 'init'
+
+        if(self.path_traversal_state=='ATTACK' and new_follow==self.follow and self.path!=None and self.path_idx<len(self.path)
+            and self.frame_counter<600):
+            if((self.path!=None and len(self.path)>0) 
+            and ((dest==self.window.player.position and len(self.path)<60) 
+            or dest==(self.init_x,self.init_y))):
+                self.traverse_path()
+                if(arcade.has_line_of_sight(self.position,self.window.player.position,self.window.wall_list)):
+                    self.range(self.window.player.center_x,self.window.player.center_y,self.window.view_left,self.window.view_bottom)
+                    self.path_traversal_state='WAIT'
+                    self.path_traversal_state_counter=0
+                    self.change_x=0
+                    self.change_y=0
+        elif self.path_traversal_state_counter=='WAIT':
+            None
+        else:
+            self.path_idx=1
+            self.frame_counter=0
+            self.follow = new_follow
+            self.path = arcade.astar_calculate_path((self.center_x,self.center_y),
+                                                dest, 
+                                                self.barrier_list,
+                                                diagonal_movement=True)
+
+        self.frame_counter+=1
+        self.path_traversal_state_counter+=1
+        if(self.path_traversal_state_counter>=120 and self.path_traversal_state=='WAIT'):
+            self.path_traversal_state_counter=0
+            self.path_traversal_state='ATTACK'
