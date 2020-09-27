@@ -22,7 +22,7 @@ from enemy import Boss
 # Constants
 SCREEN_WIDTH = 1300
 SCREEN_HEIGHT = 1000
-SCREEN_TITLE = "Outcast Cat"
+SCREEN_TITLE = "Purrtectors"
 
 # Constants used to scale our sprites from their original size
 CHARACTER_SCALING = 1.5
