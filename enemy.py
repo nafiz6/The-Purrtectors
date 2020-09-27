@@ -20,6 +20,7 @@ TURRET = 1
 RANGE = 2
 MELEE = 3
 BOSS = 4
+ANTAGONIST = 5
 
 def magnitude(x, y):
     return math.sqrt(x*x + y*y)
@@ -100,7 +101,23 @@ class Enemy(arcade.Sprite):
 
         self.enemy_type = enemy_type
 
-        if enemy_type != BOSS:
+        if enemy_type == ANTAGONIST:
+            for i in range(1,5):
+                left_still.append(arcade.load_texture(f'{img_src}.png'))
+                left_walk.append(arcade.load_texture(f'{img_src}.png'))
+            
+            for i in range(1,5):
+                right_still.append(arcade.load_texture(f'{img_src}.png'))
+                right_walk.append(arcade.load_texture(f'{img_src}.png'))
+
+            for i in range(1,5):
+                up_still.append(arcade.load_texture(f'{img_src}.png'))
+                up_walk.append(arcade.load_texture(f'{img_src}.png'))
+
+            for i in range(1,5):
+                down_still.append(arcade.load_texture(f'{img_src}.png'))
+                down_walk.append(arcade.load_texture(f'{img_src}.png'))
+        elif enemy_type != BOSS:
 
             for i in range(1,5):
                 left_still.append(arcade.load_texture(f'{img_src}-left-1.png'))
