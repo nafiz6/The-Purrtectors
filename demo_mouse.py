@@ -31,8 +31,8 @@ PLAYER_JUMP_SPEED = 20
 # and the edge of the screen.
 LEFT_VIEWPORT_MARGIN = 350
 RIGHT_VIEWPORT_MARGIN = 520
-BOTTOM_VIEWPORT_MARGIN = 370
-TOP_VIEWPORT_MARGIN = 370
+BOTTOM_VIEWPORT_MARGIN = 320
+TOP_VIEWPORT_MARGIN = 320
 
 RIGHT_FACING=0
 LEFT_FACING=1
@@ -46,8 +46,10 @@ PLAYTHROUGH_5 = 6
 PLAYTHROUGH_6 = 7
 PLAYTHROUGH_7 = 8
 CUTSCENE_2 = 9
+CUTSCENE_3 = 10
+PLAYTHROUGH_8 = 11
 
-BLACK_BAR_HEIGHT = 100
+BLACK_BAR_HEIGHT = 150
 
 TURRET = 1
 RANGE = 2
@@ -113,6 +115,7 @@ class MyGame(arcade.Window):
 
         self.can_control = None
 
+        self.plot_text = None
         self.in_start_screen = None
 
         # Separate variable that holds the player sprite
@@ -144,6 +147,7 @@ class MyGame(arcade.Window):
         self.cutscene_timer = None
         self.player_idx = None
         self.story_idx = None
+        self.level_sound = None
 
         # --- Load in a map from the tiled editor ---
     def load_level(self,path_to_map,path_to_level_sound,map_width,map_height,tile_width,tile_height,tile_scale):
@@ -185,7 +189,9 @@ class MyGame(arcade.Window):
         self.level_height = map_height*tile_height*tile_scale
 
         self.dashable_removed = None
-        self.level_sound = arcade.load_sound(path_to_level_sound)
+        if self.level_sound == None:
+            #self.level_sound = arcade.load_sound(path_to_level_sound)
+            pass
 
         # --- Other stuff
         # Set the background color
@@ -328,6 +334,7 @@ class MyGame(arcade.Window):
         #self.enemy.barrier_list.recalculate()
 
     def setup_2(self):
+        self.cutscene_timer = 0
         self.player_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.floor_list = arcade.SpriteList()
@@ -342,10 +349,19 @@ class MyGame(arcade.Window):
         # Set up the player, specifically placing it at these coordinates.
         self.player = Player(self)
         self.second_player = Player(self)
-        self.player.setup("./characters/cat", CHARACTER_SCALING, 1000, 200, 1)
-        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 1200 , 300, 2)
-        self.third_player.setup("./characters/cat", CHARACTER_SCALING, 1200 , 100, 2)
-        self.fourth_player.setup("./characters/cat", CHARACTER_SCALING, 1000 , 400, 2)
+        self.third_player = Player(self)
+        self.fourth_player = Player(self)
+        self.player.setup("./characters/cat", CHARACTER_SCALING, 2000, 200, 1)
+        self.player.facing_dir = 'UP'
+        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 2200 , 300, 2)
+        self.player.facing_dir = 'LEFT'
+        self.third_player.setup("./characters/cat", CHARACTER_SCALING, 2200 , 100, 3)
+        self.player.facing_dir = 'RIGHT'
+        self.fourth_player.setup("./characters/cat", CHARACTER_SCALING * 1.2, 2000 , 400, 4)
+        self.player.facing_dir = 'DOWN'
+
+        self.state = CUTSCENE_3
+        self.story_idx = 17
         #self.third_player.setup("./characters/cat", CHARACTER_SCALING, 350, 400, 3)
         #self.fourth_player.setup("./characters/cat", CHARACTER_SCALING*1.2, 350, 416, 4)
         self.player_list.append(self.player)
@@ -354,6 +370,62 @@ class MyGame(arcade.Window):
         self.player_list.append(self.fourth_player)
 
         self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
+
+        for player in self.player_list:
+
+            self.physics_engines.append(
+                    arcade.PhysicsEngineSimple(player, self.blockable_list,
+                                                             )
+                                                )
+
+    def level2Enemies1(self):
+        self.enemy_1 = Enemy(self)
+        self.enemy_1.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2200, 1200, MELEE)
+        self.enemy_list.append(self.enemy_1)
+
+        self.enemy_2 = Enemy(self)
+        self.enemy_2.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 1800, 1200, MELEE)
+        self.enemy_list.append(self.enemy_2)
+
+        self.enemy_3 = Enemy(self)
+        self.enemy_3.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2000, 1500, MELEE)
+        self.enemy_list.append(self.enemy_3)
+
+        self.enemy_4 = Enemy(self)
+        self.enemy_4.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2300, 1800, MELEE)
+        self.enemy_list.append(self.enemy_4)
+        
+        self.enemy_5 = Turret(self)
+        self.enemy_5.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2000, 1300, TURRET)
+        self.enemy_list.append(self.enemy_5)
+        
+        self.enemy_6 = Turret(self)
+        self.enemy_6.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2200, 1300, TURRET)
+        self.enemy_list.append(self.enemy_6)
+        
+        self.enemy_7 = Turret(self)
+        self.enemy_7.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2100, 1600, TURRET)
+        self.enemy_list.append(self.enemy_7)
+        
+        self.enemy_8 = Boss(self)
+        self.enemy_8.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING, 2000, 1600, RANGE)
+        self.enemy_list.append(self.enemy_8)
+        
+        self.enemy_9 = Boss(self)
+        self.enemy_9.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING, 2400, 1600, RANGE)
+        self.enemy_list.append(self.enemy_9)
+        
+        self.enemy_10 = Boss(self)
+        self.enemy_10.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING, 2400, 2000, RANGE)
+        self.enemy_list.append(self.enemy_10)
+        
+        for enemy in self.enemy_list:
+            self.physics_engines.append(
+                                arcade.PhysicsEngineSimple(enemy,
+                                     self.blockable_list,
+                                             ))
+
+
     
 
 
@@ -425,15 +497,15 @@ class MyGame(arcade.Window):
         rect.draw()
         rect_top.draw()
 
-        plot_text = ["The cats and the hoomans lived in harmony",
+        self.plot_text = ["The cats and the hoomans lived in harmony",
                  "But one sudden evening, something stranged happened!",
                  "Cat: I don't understand, why was I thrown out?",
                  "Cat: I'm weak. I need to find something to heal", 
                  "Cat: That's a lot better! I need to figure out what's going on.",
-                 "Cat: Maybe I can dash over that hole \n Press Shift to Dash",
+                 "Cat: Maybe I can dash over that hole \nPress Shift to Dash",
                  "",
-                 "Cat: Oh no! Danger Ahead!\n Right click to scratch",
-                 "I think I can salvage the robot's laser \n Left click to shoot laser",
+                 "Cat: Oh no! Danger Ahead!\nRight click to scratch",
+                 "I think I can salvage the robot's laser \nLeft click to shoot laser",
                  "Why are there so many robots?!",
                  "Cat Two: Wow! You seem to be good at this!",
                  "One: WHAT THE HECK IS GOING ON?!",
@@ -442,19 +514,28 @@ class MyGame(arcade.Window):
                  "TWO: You coming with me?",
                  "ONE: umm...",
                  "TWO: Unless you wanna hide here forever..",
-                 "ONE: ok..."]
+                 "ONE: ok...",
+                 "TWO: ok, you're in for a treat...meet..",
+                 "TWO: Heavy cat….he's the best with guns..and nobody \n has ever gone through his shield",
+                 "TWO: Support cat….without him we we'd be dead somewhere, \nhe heals and throws bombs to get us to safety",
+                 "TWO: Aaand yours truly, I can become invisible and sneak up\non enemies and take them out before they know what hit em",
+                 "FOUR: so...what're you good at.?",
+                 "ONE: NOTHING, I'm just a house cat! I still have no idea what's going on",
+                 "ONE: well..there's been rumours that this weird guy's responsible for all this...",
+                 "???: you've been causing a lot of trouble for me,\nand so you shall die, muahahahahahaha",
+                 "THREE: Who was that? Lets check it out!\nPRESS SPACE TO SWITCH BETWEEN DIFFERENT CATS",
+                 "",
+                 "",
+                 ]
 
 
         # Draw our health on the screen, scrolling it with the viewport
-        health_text = f"{self.help_text} {self.enemy.health}"
+        health_text = f"{self.player.help_text}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
-        arcade.draw_text(plot_text[self.story_idx], 10 + self.view_left, 40 + self.view_bottom,
+        arcade.draw_text(self.plot_text[self.story_idx], 10 + self.view_left, 80 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
 
-        if(self.boss.path!=None):
-            arcade.draw_line_strip(self.boss.path, arcade.color.BLACK, 2)
-            # print("boss")
 
 
 
@@ -488,7 +569,7 @@ class MyGame(arcade.Window):
             self.player.change_y=0
 
     def on_key_press(self, key, modifiers):
-        if not self.can_control or (self.player.dead and key!=32):
+        if (not self.can_control and key!=32) or (self.player.dead and key!=32):
             return
         """Called whenever a key is pressed. """
 
@@ -514,9 +595,6 @@ class MyGame(arcade.Window):
                 self.player.direction_y = 0
         elif key == 65505: 
             """shift"""
-            if (self.state == CUTSCENE_2):
-                if (self.story_idx < len(self.plot_text) -1 ):
-                    self.story_idx += 1
 
             if (self.player.type == 1):
 
@@ -538,15 +616,22 @@ class MyGame(arcade.Window):
                 
 
         elif key == 32: #space
-            #stop motion
-            self.player.change_x = 0
-            self.player.change_y = 0
+            if (self.state == CUTSCENE_2):
+                if (self.story_idx < len(self.plot_text) -1 ):
+                    self.story_idx += 1
+            if (self.state == CUTSCENE_3):
+                if (self.story_idx < len(self.plot_text) -1 ):
+                    self.cutscene_timer+=3
+            else:
+                #stop motion
+                self.player.change_x = 0
+                self.player.change_y = 0
 
-            #make selected
-            self.player_idx += 1
-            if self.player_idx >= len(self.player_list):
-                self.player_idx = 0
-            self.player = self.player_list[self.player_idx]
+                #make selected
+                self.player_idx += 1
+                if self.player_idx >= len(self.player_list):
+                    self.player_idx = 0
+                self.player = self.player_list[self.player_idx]
             
 
     def on_key_release(self, key, modifiers):
@@ -694,7 +779,6 @@ class MyGame(arcade.Window):
 
     def playthrough_7(self, delta_time):
         if self.player.center_x > 2700 and self.player.center_y > 2000:
-            print("HERE")
             self.story_idx = 9
             self.state = CUTSCENE_2
         pass
@@ -743,14 +827,41 @@ class MyGame(arcade.Window):
             self.story_idx = 17
         if self.cutscene_timer > 27:
             self.setup_2()
+            self.cutscene_timer = 0
+            self.state = CUTSCENE_3
+
+    def animate_cutscene_3(self, delta_time):
+        self.cutscene_timer += delta_time 
+        self.can_control = False
+        if (self.cutscene_timer > 3):
+            self.story_idx = 18
+        if (self.cutscene_timer > 6):
+            self.story_idx = 19
+        if (self.cutscene_timer > 9):
+            self.story_idx = 20
+        if (self.cutscene_timer > 13):
+            self.story_idx = 21
+        if (self.cutscene_timer > 17):
+            self.story_idx = 22
+        if (self.cutscene_timer > 21):
+            self.story_idx = 23
+        if (self.cutscene_timer > 25):
+            self.story_idx = 24
+        if (self.cutscene_timer > 29):
+            self.second_player.explosion(SCREEN_WIDTH/3 , SCREEN_HEIGHT - BLACK_BAR_HEIGHT, self.view_left, self.view_bottom)
+        if (self.cutscene_timer > 30):
+            self.story_idx = 25
+        if (self.cutscene_timer > 34):
+            self.story_idx = 26
+            self.state = PLAYTHROUGH_8
+            self.can_control = True
+            self.level2Enemies1()
     
     
 
 
 
     def on_update(self, delta_time):
-        print(self.player.center_x, self.player.center_y)
-        print(self.state)
 
         if (self.dashable_removed and self.player.dash_timer==0):
             self.dashable_removed = False
@@ -786,6 +897,8 @@ class MyGame(arcade.Window):
             self.playthrough_7(delta_time)
         elif (self.state == CUTSCENE_2):
             self.animate_cutscene_2(delta_time)
+        elif (self.state == CUTSCENE_3):
+            self.animate_cutscene_3(delta_time)
 
         # self.enemy.move()
 

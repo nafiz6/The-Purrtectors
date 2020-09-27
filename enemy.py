@@ -161,9 +161,15 @@ class Enemy(arcade.Sprite):
         self.animation_timer = 0
 
 
-        self.health = 5
+        self.health = 2
         if (enemy_type == TURRET):
-            self.health = 2
+            self.health = 1
+
+        if (enemy_type == BOSS):
+            self.health = 30
+
+        if (enemy_type == MELEE):
+            self.health = 3
 
 
         self.grid_size = 40
@@ -415,7 +421,6 @@ class Enemy(arcade.Sprite):
 class Turret(Enemy):
     def __init__(self,window):
         super().__init__(window)
-        self.health = 2
 
     # def shoot(self,x,y):
     #     None
@@ -428,7 +433,8 @@ class Turret(Enemy):
         self.window.player.center_x<self.range_x[1] 
         and self.window.player.center_x>self.range_x[0]
         and self.window.player.center_y<self.range_y[1]
-        and self.window.player.center_y>self.range_y[0]):
+        and self.window.player.center_y>self.range_y[0]
+        and self.window.player.visibility):
             dest = self.window.player.position
             new_follow = 'player'
         else:
@@ -568,7 +574,7 @@ class Boss(Enemy):
         states = ['MELEE','WAIT_FOR_SHOOT','SHOOT',"WAIT_FOR_MELEE"]
 
 
-        if(self.path_traversal_state=='MELEE'):
+        if(self.path_traversal_state=='MELEE' and self.window.player.visibility):
             if(self.path!=None and len(self.path)<60):
                 if(self.path_idx<len(self.path) and len(self.path)>1):
                     self.traverse_path()
@@ -585,7 +591,7 @@ class Boss(Enemy):
                     self.change_y=0
         elif self.path_traversal_state=='WAIT_FOR_SHOOT':
             None
-        elif self.path_traversal_state=='SHOOT':
+        elif self.path_traversal_state=='SHOOT' and self.window.player.visibility:
             if(self.path!=None and len(self.path)<60):
                 if(self.path_idx<len(self.path) and len(self.path)>1):
                     self.traverse_path()

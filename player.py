@@ -17,6 +17,8 @@ PLAYTHROUGH_5 = 6
 PLAYTHROUGH_6 = 7
 PLAYTHROUGH_7 = 8
 CUTSCENE_2 = 9
+CUTSCENE_3 = 10
+PLAYTHROUGH_8 = 11
 
 DASH_AMOUNT = 200
 
@@ -25,7 +27,8 @@ class Player(arcade.Sprite):
     def __init__(self, window):
         super().__init__()
 
-        self.window = window
+        self.help_text = None
+        self.window = window 
         self.walk_textures = {}
         self.still_textures = {}
         
@@ -78,14 +81,27 @@ class Player(arcade.Sprite):
         self.hud_sprite = None
         self.canRange = None
 
+        self.explosion_cooldown = None
+        self.default_color = None
+
     def setup(self, img_src, scale, start_x, start_y, cat_type):
+        self.explosion_cooldown = 0
         self.canRange = True
         if cat_type == 2:
+            self.help_text = "Shift then Left-Click to create an explosion. \nLeftclick ally to heal"
             self.color = [255, 220, 220]
+            self.default_color = [255, 220, 220]
         if cat_type == 3:
-            self.color = [220, 244, 220]
+            self.help_text = "Shift to become invisible. \nLeftclick to take-down an enemy near you"
+            self.color = [180, 180, 180]
+            self.default_color = [180, 180, 180]
         if cat_type == 4:
-            self.color = [210, 210, 255]
+            self.help_text = "Left-click to shoot lasers"
+            self.default_color = [200, 200, 255]
+            self.color = [200, 200, 255]
+        if cat_type == 1:
+            self.help_text = "Shift to dash\nLeftclick to shoot lasers"
+            self.default_color = [255, 255, 255]
 
         self.dead = False
 
@@ -214,7 +230,6 @@ class Player(arcade.Sprite):
         self.color = [brightness, brightness, brightness]
 
     def getDamaged(self, from_x, from_y):
-        print(self.dead)
         if self.dead:
             return
         
@@ -231,11 +246,16 @@ class Player(arcade.Sprite):
         self.dash(x, y)
         self.health -= 1
         if self.health <= 0:
-            if self.window.state >= PLAYTHROUGH_5:
+            if self.window.state >= PLAYTHROUGH_5 and self.window.state <= CUTSCENE_3:
                 self.state = PLAYTHROUGH_5
                 self.health = self.max_health
                 self.center_x = 2000
                 self.center_y = 300
+            elif self.window.state > CUTSCENE_3:
+                self.health = self.max_health
+                self.center_x = 2000
+                self.center_y = 300
+
             else:
                 self.dead = True
                 self.facing_dir = 'RIGHT'
@@ -300,8 +320,17 @@ class Player(arcade.Sprite):
         print(len(enemy_to_kill))
         if len(enemy_to_kill) > 0 :
             if magnitude(self.center_x - enemy_to_kill[0].center_x, self.center_y - enemy_to_kill[0].center_y) < self.width * 2:
-                enemy_to_kill[0].health = 0
-                self.healing_state = 100
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
+                self.healing_state = 300
             else:
                 return "NOT IN RANGE"
 
@@ -377,6 +406,13 @@ class Player(arcade.Sprite):
             self.melee_attack_animation()
             arcade.play_sound(self.melee_sound)
 
+    def explosion(self, x, y, view_left, view_bottom):
+        self.explosion_happening = True   
+        self.projectile_state = False
+        for sprite in self.explosion_sprites:
+            sprite.center_x = x + view_left
+            sprite.center_y = y + view_bottom
+
 
     def range(self, x , y, view_left, view_bottom):
         
@@ -415,12 +451,8 @@ class Player(arcade.Sprite):
             arcade.play_sound(self.shooting_sound)
 
         elif self.type == 2:
-            self.explosion_happening = True   
-            self.projectile_state = False
-            for sprite in self.explosion_sprites:
-                sprite.center_x = x + view_left
-                sprite.center_y = y + view_bottom
-            bullet_regen_timer = 500
+            self.explosion(x,y, view_left, view_bottom)
+            self.bullet_regen_timer = 500
 
 
 
@@ -441,6 +473,8 @@ class Player(arcade.Sprite):
             
     
     def update_animation(self,delta_time = 1/60):
+        if self.explosion_cooldown > 0:
+            self.explosion_cooldown -= 1
         if self.bullet_regen_timer > 0:
             self.bullet_regen_timer -= 1
             if self.bullet_regen_timer == 0:
@@ -474,7 +508,7 @@ class Player(arcade.Sprite):
             if self.dash_timer == 0:
                 self.change_x = 0
                 self.change_y = 0
-                self.color = [255, 255, 255]
+                self.color = self.default_color
 
 
         self.animation_timer += delta_time
