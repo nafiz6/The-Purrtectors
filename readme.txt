@@ -2,18 +2,9 @@ Dependencies
     Arcade
     Python
 
-Running The Game
 
-    With Python interpreter
-        Just run the run_game.py file by double clicking on it in windows or running the following command in your terminal in the game folder
-            "python run_game.py,"
 
-    We didn't build an executable file yet so as of now the python interpeter is the only way of running our game
-
-    
-    
-
-    Gameplay
+Gameplay
 
         You play as a house cat suddenly thrown out of his home. Stranded in an alley all alone, he must now fight his way through a hoard of cat-haters or die. 
 
@@ -38,8 +29,16 @@ Running The Game
 
             All cats can scratch to hurt enemies from a short distance
 
+Running The Game
 
-    Controls - keyboard + mouse
+    With Python interpreter
+        Just run the run_game.py file by double clicking on it in windows or running the following command in your terminal in the game folder
+            "python run_game.py,"
+
+    We didn't build an executable file yet so as of now the python interpeter is the only way of running our game
+
+
+Controls - keyboard + mouse
 
         Use "wasd" keys to move around
             w - up
@@ -65,7 +64,7 @@ Running The Game
 
 
 
-    Copyright attributions
+Copyright attributions
 
     https://kenney.nl/
         We used maps and some character sprites from here
