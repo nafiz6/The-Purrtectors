@@ -47,6 +47,7 @@ TOP_VIEWPORT_MARGIN = 320
 RIGHT_FACING=0
 LEFT_FACING=1
 
+MENU = 0
 CUTSCENE_1 = 1
 PLAYTHROUGH_1 = 2
 PLAYTHROUGH_2 = 3
@@ -60,7 +61,8 @@ CUTSCENE_3 = 10
 PLAYTHROUGH_8 = 11
 CUTSCENE_4 = 12
 PLAYTHROUGH_9 = 13
-CUTSCENE_5 = 13
+CUTSCENE_5 = 14
+END = 15
 
 BLACK_BAR_HEIGHT = 150
 
@@ -114,6 +116,9 @@ class MyGame(arcade.Window):
     """
 
     def __init__(self):
+
+        self.menu_sprite = None
+        self.menu_sprites = None
         # Call the parent class and set up the window
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE,resizable=True)
 
@@ -155,7 +160,7 @@ class MyGame(arcade.Window):
         self.view_target_left = self.view_left
         self.view_target_bottom = self.view_bottom
 
-        arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
+        arcade.set_background_color((0,0,0))
 
         self.state = None
 
@@ -205,7 +210,7 @@ class MyGame(arcade.Window):
 
         self.dashable_removed = None
         if self.level_sound == None:
-            #self.level_sound = arcade.load_sound(path_to_level_sound)
+            self.level_sound = arcade.load_sound(path_to_level_sound)
             pass
 
         # --- Other stuff
@@ -224,10 +229,15 @@ class MyGame(arcade.Window):
         self.help_text = ""
 
         
-        self.state = CUTSCENE_1
+        self.state = MENU
         self.cutscene_timer = 0
         self.can_control = False
         self.in_start_screen = True
+
+
+        self.menu_sprite = arcade.Sprite('./effects/start-button.png')
+        self.menu_sprites = arcade.SpriteList()
+        self.menu_sprites.append(self.menu_sprite)
 
         self.dashable_removed = False
 
@@ -262,9 +272,8 @@ class MyGame(arcade.Window):
     
 
         self.enemy = Turret(self)
-        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2800, 300, TURRET)
+        self.enemy.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2300, 300, TURRET)
         self.enemy_list.append(self.enemy)
-        print(self.enemy.dead)
 
         self.enemy_2 = Enemy(self)
         self.enemy_2.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 3000, 300, MELEE)
@@ -367,13 +376,13 @@ class MyGame(arcade.Window):
         self.third_player = Player(self)
         self.fourth_player = Player(self)
         self.player.setup("./characters/cat", CHARACTER_SCALING, 2000, 200, 1)
-        self.player.facing_dir = 'UP'
-        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 2200 , 300, 2)
-        self.player.facing_dir = 'LEFT'
-        self.third_player.setup("./characters/cat", CHARACTER_SCALING, 2200 , 100, 3)
         self.player.facing_dir = 'RIGHT'
+        self.second_player.setup("./characters/cat", CHARACTER_SCALING, 2200 , 300, 2)
+        self.second_player.facing_dir = 'LEFT'
+        self.third_player.setup("./characters/cat", CHARACTER_SCALING, 2200 , 100, 3)
+        self.third_player.facing_dir = 'RIGHT'
         self.fourth_player.setup("./characters/cat", CHARACTER_SCALING * 1.2, 2000 , 400, 4)
-        self.player.facing_dir = 'DOWN'
+        self.fourth_player.facing_dir = 'DOWN'
 
         self.state = CUTSCENE_3
         self.story_idx = 17
@@ -397,7 +406,6 @@ class MyGame(arcade.Window):
                                                 )
 
     def level2Enemies1(self):
-        """
         self.enemy_1 = Enemy(self)
         self.enemy_1.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2200, 1200, MELEE)
         self.enemy_list.append(self.enemy_1)
@@ -427,15 +435,15 @@ class MyGame(arcade.Window):
         self.enemy_list.append(self.enemy_7)
         
         self.enemy_8 = Boss(self)
-        self.enemy_8.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING, 2000, 1600, RANGE)
+        self.enemy_8.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING*2, 2000, 1600, RANGE)
         self.enemy_list.append(self.enemy_8)
         
         self.enemy_9 = Boss(self)
-        self.enemy_9.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING, 2400, 2200, RANGE)
+        self.enemy_9.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING*2, 2400, 2200, RANGE)
         self.enemy_list.append(self.enemy_9)
         
         self.enemy_10 = Boss(self)
-        self.enemy_10.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING, 2400, 2000, RANGE)
+        self.enemy_10.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING*2, 2400, 2000, RANGE)
         self.enemy_list.append(self.enemy_10)
         
         for enemy in self.enemy_list:
@@ -443,7 +451,6 @@ class MyGame(arcade.Window):
                                 arcade.PhysicsEngineSimple(enemy,
                                      self.blockable_list,
                                              ))
-        """
 
     
 
@@ -457,8 +464,14 @@ class MyGame(arcade.Window):
                                            
 
     def on_draw(self):
+
         """ Render the screen. """
         arcade.start_render()
+
+        if (self.state == END):
+            arcade.draw_text("The purrtecters destroyed the evil machine\nAnd restored society to normal", 10 + self.view_left, 10 + self.view_bottom + SCREEN_HEIGHT/2,
+                         arcade.csscolor.WHITE, 50, bold = True)
+            return
 
         # Draw our sprites
         self.floor_list.draw()
@@ -540,18 +553,26 @@ class MyGame(arcade.Window):
                  "TWO: Support cat….without him we we'd be dead somewhere, \nhe heals and throws bombs to get us to safety",
                  "TWO: Aaand yours truly, I can become invisible and sneak up\non enemies and take them out before they know what hit em",
                  "FOUR: so...what're you good at.?",
-                 "ONE: NOTHING, I'm just a house cat! I still have no idea what's going on",
-                 "ONE: well..there's been rumours that this weird guy's responsible for all this...",
+                 "ONE: NOTHING, I'm just a house cat! I still have no idea \nwhat's going on",
+                 "ONE: well..there's been rumours that this weird guy's \nresponsible for all this...",
                  "???: you've been causing a lot of trouble for me,\nand so you shall die, muahahahahahaha",
                  "THREE: Who was that? Lets check it out!\nPRESS SPACE TO SWITCH BETWEEN DIFFERENT CATS",
                  "???: You piece of turds decided that you can \nfeast on my beloved Ronny",
                  "???: ...oh Ronny...what a beauty she was…",
                  "???: FINISH THEM!!",
-                 "",
-                 "",
-                 "",
-                 "",
-                 "",
+                 "ONE: so.. who's Ronnie?",
+                 "???: HOW DARE YOU SAY THAT NAME? she….she was my family..",
+                 "???: and you turds take advantage of the fact the she flew away\n to eat a berry she found...",
+                 "???: little did she know that that would be her last..",
+                 "TWO: wait, ronnie's….a BIRD?",
+                 "???: AN EXOTIC GREY PARROT SHE WAS YOU DIMWIT...\nyou don't deserve to exist...",
+                 "???: So I created the purr-minator...",
+                 "???: designed to rid the world of the 4 legged \nrodents that have the previlige to be called...cats",
+                 "???: it's a state of the art machine that feeds off of \nmy feline detesting mind waves, ",
+                 "???: amplifies it and broadcasts it to the entire world",
+                 "THREE: Well too bad it ends here",
+                 "???: wait... NOoooo...",
+                 ""
 
                  ]
 
@@ -563,9 +584,23 @@ class MyGame(arcade.Window):
                          arcade.csscolor.WHITE, 23, bold = True)
         arcade.draw_text(self.plot_text[self.story_idx], 10 + self.view_left, 80 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
-        arcade.draw_text(self.player.info, 10 + self.view_left, 10 + self.view_bottom + SCREEN_HEIGHT - BLACK_BAR_HEIGHT,
+        if (self.state == CUTSCENE_1 or self.state == CUTSCENE_2 or self.state == CUTSCENE_3
+                or self.state == CUTSCENE_4 or self.state == CUTSCENE_5):
+            arcade.draw_text("PRESS SPACE TO SKIP DIALOGUE", 10 + self.view_left, 10 + self.view_bottom + SCREEN_HEIGHT - BLACK_BAR_HEIGHT,
                          arcade.csscolor.WHITE, 27, bold = True)
+
+        else:
+            arcade.draw_text(self.player.info, 10 + self.view_left, 10 + self.view_bottom + SCREEN_HEIGHT - BLACK_BAR_HEIGHT,
+                         arcade.csscolor.WHITE, 27, bold = True)
+        if (self.state == END):
+            arcade.draw_text("The purrtecters destroyed the evil machine\nAnd restored society to normal", 10 + self.view_left, 10 + self.view_bottom + SCREEN_HEIGHT - BLACK_BAR_HEIGHT,
+                         arcade.csscolor.WHITE, 50, bold = True)
+
             
+        if self.state == MENU:
+            self.menu_sprite.center_x = self.view_left + SCREEN_WIDTH/2
+            self.menu_sprite.center_y = self.view_bottom + SCREEN_HEIGHT/2
+            self.menu_sprites.draw()
 
 
 
@@ -584,11 +619,16 @@ class MyGame(arcade.Window):
             player.change_y = 0
             player.center_x = 2300 + player.type * 100
             player.center_y = 2900
+            player.facing_dir = 'UP'
 
 
         
 
     def on_mouse_press(self, x, y, button, modifiers):
+        isMenu = arcade.get_sprites_at_point((x + self.view_left, y + self.view_bottom), self.menu_sprites)
+        if len(isMenu) > 0:
+            self.state = CUTSCENE_1
+
         if not self.can_control:
             return
         if button == arcade.MOUSE_BUTTON_RIGHT:
@@ -665,12 +705,9 @@ class MyGame(arcade.Window):
                 
 
         elif key == 32: #space
-            if (self.state == CUTSCENE_2):
-                if (self.story_idx < len(self.plot_text) -1 ):
-                    self.story_idx += 1
-            if (self.state == CUTSCENE_3):
-                if (self.story_idx < len(self.plot_text) -1 ):
-                    self.cutscene_timer+=3
+            if (self.state == CUTSCENE_1 or self.state == CUTSCENE_2 or self.state == CUTSCENE_3
+                or self.state == CUTSCENE_4 or self.state == CUTSCENE_5):
+                    self.cutscene_timer+=4
             else:
                 #stop motion
                 self.player.change_x = 0
@@ -858,23 +895,23 @@ class MyGame(arcade.Window):
             self.second_player.change_y = -PLAYER_MOVEMENT_SPEED
         else:
             self.second_player.change_y = 0
-        if (self.cutscene_timer > 3):
+        if (self.cutscene_timer > 4):
             self.story_idx = 10
-        if (self.cutscene_timer > 5):
-            self.story_idx = 11
         if (self.cutscene_timer > 8):
+            self.story_idx = 11
+        if (self.cutscene_timer > 12):
             self.story_idx = 12
-        if (self.cutscene_timer > 11):
+        if (self.cutscene_timer > 16):
             self.story_idx = 13
-        if (self.cutscene_timer > 14):
-            self.story_idx = 14
-        if (self.cutscene_timer > 17):
-            self.story_idx = 15
         if (self.cutscene_timer > 20):
+            self.story_idx = 14
+        if (self.cutscene_timer > 24):
+            self.story_idx = 15
+        if (self.cutscene_timer > 28):
             self.story_idx = 16
-        if (self.cutscene_timer > 23):
+        if (self.cutscene_timer > 32):
             self.story_idx = 17
-        if self.cutscene_timer > 27:
+        if self.cutscene_timer > 36:
             self.setup_2()
             self.cutscene_timer = 0
             self.state = CUTSCENE_3
@@ -882,19 +919,19 @@ class MyGame(arcade.Window):
     def animate_cutscene_3(self, delta_time):
         self.cutscene_timer += delta_time 
         self.can_control = False
-        if (self.cutscene_timer > 3):
+        if (self.cutscene_timer > 4):
             self.story_idx = 18
-        if (self.cutscene_timer > 6):
+        if (self.cutscene_timer > 8):
             self.story_idx = 19
-        if (self.cutscene_timer > 9):
+        if (self.cutscene_timer > 12):
             self.story_idx = 20
-        if (self.cutscene_timer > 13):
+        if (self.cutscene_timer > 16):
             self.story_idx = 21
-        if (self.cutscene_timer > 17):
+        if (self.cutscene_timer > 20):
             self.story_idx = 22
-        if (self.cutscene_timer > 21):
+        if (self.cutscene_timer > 24):
             self.story_idx = 23
-        if (self.cutscene_timer > 25):
+        if (self.cutscene_timer > 26):
             self.story_idx = 24
         if (self.cutscene_timer > 29):
             self.second_player.explosion(SCREEN_WIDTH/3 , SCREEN_HEIGHT - BLACK_BAR_HEIGHT, self.view_left, self.view_bottom)
@@ -934,8 +971,54 @@ class MyGame(arcade.Window):
                                              ))
 
 
+    def playthrough_9(self):
+        for enemy in self.enemy_list:
+            if not enemy.dead:
+                return
+    
+        self.state = CUTSCENE_5
+        self.cutscene_timer = 0
+        for player in self.player_list:
+            player.change_x = 0
+            player.change_y = 0
+            player.center_x = 2300 + player.type * 100
+            player.center_y = 2900
+            player.facing_dir = 'UP'
     
 
+    def animate_cutscene_5(self, delta_time):
+        self.can_control = False
+        self.cutscene_timer += delta_time
+
+
+        if self.cutscene_timer > 4 : 
+            self.story_idx = 30
+        if self.cutscene_timer > 8 : 
+            self.story_idx = 31
+        if self.cutscene_timer > 12 : 
+            self.story_idx = 32
+        if self.cutscene_timer > 16 : 
+            self.story_idx = 33
+        if self.cutscene_timer > 20 : 
+            self.story_idx = 34
+        if self.cutscene_timer > 24 : 
+            self.story_idx = 35
+        if self.cutscene_timer > 28 : 
+            self.story_idx = 36
+        if self.cutscene_timer > 32 : 
+            self.story_idx = 37
+        if self.cutscene_timer > 36 : 
+            self.story_idx = 38
+        if self.cutscene_timer > 40 : 
+            self.story_idx = 39
+        if self.cutscene_timer > 44 : 
+            self.story_idx = 40
+        if self.cutscene_timer > 48 : 
+            self.story_idx = 41
+        if self.cutscene_timer > 52 :
+            self.story_idx = 42
+            self.state = END
+        
 
 
     
@@ -984,6 +1067,10 @@ class MyGame(arcade.Window):
             self.playthrough_8()
         elif (self.state == CUTSCENE_4):
             self.animate_cutscene_4(delta_time)
+        elif (self.state == PLAYTHROUGH_9):
+            self.playthrough_9()
+        elif (self.state == CUTSCENE_5):
+            self.animate_cutscene_5(delta_time)
 
 
         # self.enemy.move()
@@ -1029,7 +1116,6 @@ class MyGame(arcade.Window):
                 if len(wall_hit_list) > 0 or enemy_hit_list:
                     bullet.remove_from_sprite_lists()
 
-                print(enemy_hit_list,bullet.position,self.player.position)
                 if enemy_hit_list:
                     self.player.getDamaged(enemy.center_x, enemy.center_y)
 
@@ -1097,14 +1183,12 @@ class MyGame(arcade.Window):
                                 SCREEN_WIDTH + self.view_left,
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
-        print(f"Window resized to: {width}, {height}")
 
 
 def main():
     """ Main method """
     window = MyGame()
     window.setup()
-    window.setup_2()
     arcade.run()
 
 

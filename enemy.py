@@ -15,6 +15,11 @@ PLAYTHROUGH_5 = 6
 PLAYTHROUGH_6 = 7
 PLAYTHROUGH_7 = 8
 CUTSCENE_2 = 9
+CUTSCENE_3 = 10
+PLAYTHROUGH_8 = 11
+CUTSCENE_4 = 12
+PLAYTHROUGH_9 = 13
+CUTSCENE_5 = 14
 
 TURRET = 1
 RANGE = 2
@@ -81,7 +86,7 @@ class Enemy(arcade.Sprite):
         self.direction_x = 0
         self.direction_y = 0
 
-        self.movement_speed = 4
+        self.movement_speed = 8
 
         sprite_sheet = img_src
 
@@ -136,6 +141,7 @@ class Enemy(arcade.Sprite):
                 down_walk.append(arcade.load_texture(f'{img_src}-front-{i}.png'))
 
         else:
+            self.movement_speed * 8
             for i in range(1,5):
                 left_still.append(arcade.load_texture(f'{img_src}-right-{i}.png', flipped_horizontally = True))
                 left_walk.append(arcade.load_texture(f'{img_src}-right-run-{i}.png', flipped_horizontally = True))
@@ -260,7 +266,7 @@ class Enemy(arcade.Sprite):
         dx=(x-self.center_x)
         dy=(y-self.center_y)
         m = magnitude(dx,dy)
-        if(m<=ENEMY_SPEED):
+        if(m<=self.movement_speed):
             self.center_x = self.path[self.path_idx][0]
             self.center_y = self.path[self.path_idx][1]
             self.path_idx+=1
@@ -268,8 +274,8 @@ class Enemy(arcade.Sprite):
                 self.traverse_path()
             return 
 
-        self.change_x=dx/m*ENEMY_SPEED
-        self.change_y=dy/m*ENEMY_SPEED
+        self.change_x=dx/m*self.movement_speed
+        self.change_y=dy/m*self.movement_speed
 
     def update(self):        
         dest = None
@@ -351,9 +357,7 @@ class Enemy(arcade.Sprite):
             y += 1
 
         self.dash(x, y)
-        print(self.health)
         self.health -= 1
-        print(self.health)
         if self.health <= 0:
             if self.window.state == PLAYTHROUGH_5:
                 self.window.story_idx = 8
@@ -412,14 +416,15 @@ class Enemy(arcade.Sprite):
 
         self.animation_timer += delta_time
 
-        if self.change_x<0 and self.facing_dir != 'LEFT':
-            self.facing_dir='LEFT'
-        if self.change_x>0 and self.facing_dir != 'RIGHT':
-            self.facing_dir='RIGHT'
         if self.change_y>0 and self.facing_dir != 'UP':
             self.facing_dir='UP'
         if self.change_y<0 and self.facing_dir != 'DOWN':
             self.facing_dir='DOWN'
+        if self.change_x<1 and self.facing_dir != 'LEFT':
+            self.facing_dir='LEFT'
+        if self.change_x>0 and self.facing_dir != 'RIGHT':
+            self.facing_dir='RIGHT'
+
 
         
         if (self.animation_timer > 0.2):
@@ -610,7 +615,7 @@ class Boss(Enemy):
             None
         elif self.path_traversal_state=='SHOOT' and self.window.player.visibility:
             if(self.path!=None and len(self.path)<60):
-                if(self.path_idx<len(self.path) and len(self.path)>1):
+                if(self.path_idx<len(self.path) and len(self.path)>1 and self.window.state > CUTSCENE_4):
                     self.traverse_path()
                     if(arcade.has_line_of_sight((self.center_x,self.center_y),
                         (self.window.player.center_x,self.window.player.center_y),

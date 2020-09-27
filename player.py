@@ -7,7 +7,7 @@ def magnitude(x, y):
     return math.sqrt(x*x + y*y)
 
 
-
+MENU = 0
 CUTSCENE_1 = 1
 PLAYTHROUGH_1 = 2
 PLAYTHROUGH_2 = 3
@@ -116,7 +116,7 @@ class Player(arcade.Sprite):
         self.direction_x = 0
         self.direction_y = 0
 
-        self.movement_speed = 4
+        self.movement_speed = 8
 
         sprite_sheet = img_src
 
