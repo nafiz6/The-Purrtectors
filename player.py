@@ -338,6 +338,7 @@ class Player(arcade.Sprite):
                 enemy_to_kill[0].getDamaged(self.center_x, self.center_y)
                 self.healing_state = 300
             else:
+                self.info = "Not in range"
                 return "NOT IN RANGE"
 
         
@@ -484,17 +485,24 @@ class Player(arcade.Sprite):
     def update_animation(self,delta_time = 1/60):
         if self.explosion_cooldown > 0:
             self.explosion_cooldown -= 1
+            if self.explosion_cooldown == 0:
+                self.info = " "
         if self.bullet_regen_timer > 0:
             self.bullet_regen_timer -= 1
             if self.bullet_regen_timer == 0:
+                self.info = " "
                 self.rem_bullets = self.max_bullets
         if self.dead:
             return
         if self.healing_state > 0:
             self.healing_state -= 1
+            if (self.healing_state == 0 ):
+                self.info = " "
 
         if self.invisible_cooldown > 0:
             self.invisible_cooldown -= 1
+            if self.invisible_cooldown == 0 :
+                self.info = " "
 
         if self.type == 4:
             if self.health < self.max_health:
@@ -509,6 +517,7 @@ class Player(arcade.Sprite):
             self.visibility_timer -= 1
             if self.visibility_timer == 0:
                 self.visible()
+                self.info = " "
 
         if (self.dash_timer>0):
             self.dash_timer-=1

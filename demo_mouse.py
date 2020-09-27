@@ -48,6 +48,9 @@ PLAYTHROUGH_7 = 8
 CUTSCENE_2 = 9
 CUTSCENE_3 = 10
 PLAYTHROUGH_8 = 11
+CUTSCENE_4 = 12
+PLAYTHROUGH_9 = 13
+CUTSCENE_5 = 13
 
 BLACK_BAR_HEIGHT = 150
 
@@ -55,6 +58,7 @@ TURRET = 1
 RANGE = 2
 MELEE = 3
 BOSS = 4
+ANTAGONIST = 5
 
 
 
@@ -110,6 +114,7 @@ class MyGame(arcade.Window):
         self.enemy_list = None
         self.dashable_list=None
         self.blockable_list=None
+        self.antagonist_list=None
         self.health_pickup_list=None
         self.health_sprite = None
 
@@ -224,6 +229,7 @@ class MyGame(arcade.Window):
         self.dashable_list = arcade.SpriteList()
         self.blockable_list = arcade.SpriteList()
         self.health_pickup_list = arcade.SpriteList()
+        self.antagonist_list = arcade.SpriteList()
         
 
         self.player_idx = 0
@@ -381,6 +387,7 @@ class MyGame(arcade.Window):
                                                 )
 
     def level2Enemies1(self):
+        """
         self.enemy_1 = Enemy(self)
         self.enemy_1.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2200, 1200, MELEE)
         self.enemy_list.append(self.enemy_1)
@@ -394,7 +401,7 @@ class MyGame(arcade.Window):
         self.enemy_list.append(self.enemy_3)
 
         self.enemy_4 = Enemy(self)
-        self.enemy_4.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2300, 1800, MELEE)
+        self.enemy_4.setup("./characters/enemies/robo-1/robo", CHARACTER_SCALING, 2300, 2200, MELEE)
         self.enemy_list.append(self.enemy_4)
         
         self.enemy_5 = Turret(self)
@@ -406,7 +413,7 @@ class MyGame(arcade.Window):
         self.enemy_list.append(self.enemy_6)
         
         self.enemy_7 = Turret(self)
-        self.enemy_7.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2100, 1600, TURRET)
+        self.enemy_7.setup("./characters/enemies/turret/turret", CHARACTER_SCALING, 2100, 2200, TURRET)
         self.enemy_list.append(self.enemy_7)
         
         self.enemy_8 = Boss(self)
@@ -414,7 +421,7 @@ class MyGame(arcade.Window):
         self.enemy_list.append(self.enemy_8)
         
         self.enemy_9 = Boss(self)
-        self.enemy_9.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING, 2400, 1600, RANGE)
+        self.enemy_9.setup("./characters/enemies/robotgunner/turrent", CHARACTER_SCALING, 2400, 2200, RANGE)
         self.enemy_list.append(self.enemy_9)
         
         self.enemy_10 = Boss(self)
@@ -426,7 +433,7 @@ class MyGame(arcade.Window):
                                 arcade.PhysicsEngineSimple(enemy,
                                      self.blockable_list,
                                              ))
-
+        """
 
     
 
@@ -451,6 +458,7 @@ class MyGame(arcade.Window):
         self.enemy_list.draw()
         self.props_list.draw()
         self.health_pickup_list.draw()
+        self.antagonist_list.draw()
 
         for enemy in self.enemy_list:
             enemy.bullet_list.draw()
@@ -526,20 +534,49 @@ class MyGame(arcade.Window):
                  "ONE: well..there's been rumours that this weird guy's responsible for all this...",
                  "???: you've been causing a lot of trouble for me,\nand so you shall die, muahahahahahaha",
                  "THREE: Who was that? Lets check it out!\nPRESS SPACE TO SWITCH BETWEEN DIFFERENT CATS",
+                 "???: You piece of turds decided that you can \nfeast on my beloved Ronny",
+                 "???: ...oh Ronny...what a beauty she was…",
+                 "???: FINISH THEM!!",
                  "",
                  "",
+                 "",
+                 "",
+                 "",
+
                  ]
 
 
         # Draw our health on the screen, scrolling it with the viewport
         health_text = f"{self.player.help_text}"
+        health_text_2 = f"{self.player.info}"
         arcade.draw_text(health_text, 10 + self.view_left, 10 + self.view_bottom,
-                         arcade.csscolor.WHITE, 27, bold = True)
+                         arcade.csscolor.WHITE, 23, bold = True)
         arcade.draw_text(self.plot_text[self.story_idx], 10 + self.view_left, 80 + self.view_bottom,
                          arcade.csscolor.WHITE, 27, bold = True)
+        arcade.draw_text(self.player.info, 10 + self.view_left, 10 + self.view_bottom + SCREEN_HEIGHT - BLACK_BAR_HEIGHT,
+                         arcade.csscolor.WHITE, 27, bold = True)
+            
 
 
 
+    def boss_spawn(self):
+
+        self.enemy_11 = Boss(self)
+        self.enemy_11.setup("./characters/enemies/boss/png/boss", CHARACTER_SCALING, 2500, 3200, BOSS)
+        self.enemy_list.append(self.enemy_11)
+
+        self.enemy_12 = Enemy(self)
+        self.enemy_12.setup("./characters/enemies/antagonist/a", CHARACTER_SCALING * 2.5, 2600, 3200, ANTAGONIST)
+        self.antagonist_list.append(self.enemy_12)
+
+        for player in self.player_list:
+            player.change_x = 0
+            player.change_y = 0
+            player.center_x = 2300 + player.type * 100
+            player.center_y = 2900
+
+
+        
 
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.can_control:
@@ -858,7 +895,39 @@ class MyGame(arcade.Window):
             self.state = PLAYTHROUGH_8
             self.can_control = True
             self.level2Enemies1()
+
+    def playthrough_8(self):
+        for enemy in self.enemy_list:
+            if not enemy.dead:
+                return
     
+        self.state = CUTSCENE_4
+        self.cutscene_timer = 0
+        self.boss_spawn()
+    
+    def animate_cutscene_4(self, delta_time):
+        self.can_control = False
+        self.cutscene_timer+= delta_time
+
+        if self.cutscene_timer > 4 : 
+            self.story_idx = 27
+        if self.cutscene_timer > 8 : 
+            self.story_idx = 28
+        if self.cutscene_timer > 12 : 
+            self.story_idx = 29
+            self.can_control = True
+            self.state = PLAYTHROUGH_9
+            self.cutscene_timer = 0
+            self.physics_engines.append(
+                                arcade.PhysicsEngineSimple(self.enemy_11,
+                                     self.blockable_list,
+                                             ))
+
+
+    
+
+
+
     
 
 
@@ -901,6 +970,11 @@ class MyGame(arcade.Window):
             self.animate_cutscene_2(delta_time)
         elif (self.state == CUTSCENE_3):
             self.animate_cutscene_3(delta_time)
+        elif self.state == PLAYTHROUGH_8:
+            self.playthrough_8()
+        elif (self.state == CUTSCENE_4):
+            self.animate_cutscene_4(delta_time)
+
 
         # self.enemy.move()
 
@@ -983,12 +1057,8 @@ class MyGame(arcade.Window):
         #self.enemy_physics_engine.update()
         
         for enemy in self.enemy_list:
-            if (self.player.center_x<enemy.range_x[1] 
-            and self.player.center_x>enemy.range_x[0]
-            and self.player.center_y<enemy.range_y[1]
-            and self.player.center_y>enemy.range_y[0]):
-                enemy.update()
-                enemy.update_animation()
+            enemy.update()
+            enemy.update_animation()
 
 
 
