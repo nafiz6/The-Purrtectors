@@ -84,7 +84,10 @@ class Player(arcade.Sprite):
         self.explosion_cooldown = None
         self.default_color = None
 
+        self.info = None
+
     def setup(self, img_src, scale, start_x, start_y, cat_type):
+        self.info = " "
         self.explosion_cooldown = 0
         self.canRange = True
         if cat_type == 2:
@@ -298,12 +301,14 @@ class Player(arcade.Sprite):
 
             
             return (self.center_x + DASH_AMOUNT*relative_x, self.center_y + DASH_AMOUNT*relative_y)
+        
         return (self.center_x, self.center_y)
 
     def heal(self, x, y, sprite_list):
         if self.dead:
             return
         if (self.healing_state > 0 ):
+            self.info = "Healing in cooldown"
             return
         cat_to_heal = arcade.get_sprites_at_point((x, y), sprite_list)
         if len(cat_to_heal) > 0 and cat_to_heal[0].max_health > cat_to_heal[0].health:
@@ -315,6 +320,7 @@ class Player(arcade.Sprite):
         if self.dead:
             return ""
         if (self.healing_state > 0 ):
+            self.info = "Sneakkill in cooldown"
             return ""
         enemy_to_kill = arcade.get_sprites_at_point((x, y), sprite_list)
         print(len(enemy_to_kill))
@@ -417,6 +423,8 @@ class Player(arcade.Sprite):
     def range(self, x , y, view_left, view_bottom):
         
         if not self.canRange or self.dead or self.bullet_regen_timer > 0:
+            if (self.bullet_regen_timer > 0):
+                self.info = "Ability in Cooldown"
             return
 
         if (self.type == 1 or self.type == 4):
@@ -460,6 +468,7 @@ class Player(arcade.Sprite):
         if self.dead:
             return
         if self.invisible_cooldown > 0 :
+            self.info = "Invisible in cooldown"
             return
         self.invisible_cooldown = 500
         self.visibility = False

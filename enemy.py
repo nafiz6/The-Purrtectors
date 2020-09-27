@@ -183,7 +183,7 @@ class Enemy(arcade.Sprite):
         self.range_y = (max(self.init_y-400,0),min(self.init_y+400,self.window.level_height))
         
         self.barrier_list = arcade.AStarBarrierList(self.window.player,
-                                                    self.window.blockable_list,
+                                                    self.window.player_list,
                                                     self.grid_size,
                                                     0,
                                                     self.window.level_width,

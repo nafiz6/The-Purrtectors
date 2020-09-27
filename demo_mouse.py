@@ -320,7 +320,6 @@ class MyGame(arcade.Window):
             
 
 
-
         for enemy in self.enemy_list:
             self.physics_engines.append(
                                 arcade.PhysicsEngineSimple(enemy,
@@ -370,6 +369,9 @@ class MyGame(arcade.Window):
         self.player_list.append(self.fourth_player)
 
         self.health_sprite = arcade.Sprite('./effects/256px-Paw-print.svg.png', 0.2)
+
+        for sprite in self.wall_list:
+            self.blockable_list.append(sprite)
 
         for player in self.player_list:
 
@@ -981,8 +983,12 @@ class MyGame(arcade.Window):
         #self.enemy_physics_engine.update()
         
         for enemy in self.enemy_list:
-            enemy.update()
-            enemy.update_animation()
+            if (self.player.center_x<enemy.range_x[1] 
+            and self.player.center_x>enemy.range_x[0]
+            and self.player.center_y<enemy.range_y[1]
+            and self.player.center_y>enemy.range_y[0]):
+                enemy.update()
+                enemy.update_animation()
 
 
 
