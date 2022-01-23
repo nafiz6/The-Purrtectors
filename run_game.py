@@ -120,7 +120,7 @@ class MyGame(arcade.Window):
         self.menu_sprite = None
         self.menu_sprites = None
         # Call the parent class and set up the window
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE,resizable=True)
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE,resizable=False)
 
         # These are 'lists' that keep track of our sprites. Each sprite should
         # go into a list.
@@ -507,7 +507,7 @@ class MyGame(arcade.Window):
 
         if self.player.projectile_state:
             arcade.draw_circle_filled(self.mouse_x + self.view_left,
-                                self.mouse_y + self.view_bottom, 100,
+                                self.mouse_y + self.view_bottom+BLACK_BAR_HEIGHT, 100,
                              	(100, 149, 237, 50))
 
 
@@ -625,7 +625,15 @@ class MyGame(arcade.Window):
         
 
     def on_mouse_press(self, x, y, button, modifiers):
-        isMenu = arcade.get_sprites_at_point((x + self.view_left, y + self.view_bottom), self.menu_sprites)
+        #print(x,y,self.view_left,self.view_bottom)
+        #print(self.player.center_x,self.player.center_y)
+        #print(x+self.view_left,y+self.view_bottom+BLACK_BAR_HEIGHT)
+        #print(x+self.view_left,y+self.view_bottom)
+        #print(self.menu_sprite.center_x,self.menu_sprite.center_y)
+        level_coord_x = x+self.view_left
+        level_coord_y= y+self.view_bottom+BLACK_BAR_HEIGHT
+
+        isMenu = arcade.get_sprites_at_point((level_coord_x,level_coord_y), self.menu_sprites)
         if len(isMenu) > 0:
             self.state = CUTSCENE_1
 
@@ -635,14 +643,14 @@ class MyGame(arcade.Window):
             self.player.melee()
         elif button == arcade.MOUSE_BUTTON_LEFT:
             if self.player.type == 1 or self.player.type == 4:
-                self.player.range(x, y, self.view_left, self.view_bottom)
+                self.player.range(x, y, self.view_left, self.view_bottom+BLACK_BAR_HEIGHT)
             elif self.player.type == 2:
                 if (self.player.projectile_state):
-                    self.player.range(x, y, self.view_left, self.view_bottom)
+                    self.player.range(x, y, self.view_left, self.view_bottom+BLACK_BAR_HEIGHT)
                 else:
-                    self.player.heal(x + self.view_left, y + self.view_bottom, self.player_list)
+                    self.player.heal(x + self.view_left, y + self.view_bottom+BLACK_BAR_HEIGHT, self.player_list)
             elif self.player.type == 3:
-                self.help_text = self.player.sneak_kill(x + self.view_left, y + self.view_bottom, self.enemy_list)
+                self.help_text = self.player.sneak_kill(x + self.view_left, y + self.view_bottom+BLACK_BAR_HEIGHT, self.enemy_list)
 
     def on_mouse_motion(self, x, y, dx, dy):
         #position of mouse relative to palyer
